@@ -2,6 +2,10 @@ package Asterisk::AGI;
 
 require 5.004;
 
+use Asterisk;
+
+@ISA = ( 'Asterisk' );
+
 =head1 NAME
 
 Asterisk::AGI - Simple Asterisk Gateway Interface Class
@@ -246,3 +250,5 @@ sub exec {
 
 
 1;
+
+__END__
