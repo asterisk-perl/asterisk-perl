@@ -539,7 +539,7 @@ Returns: Always returns 1
 sub set_variable {
 	my ($self, $variable, $value) = @_;
 
-	return $self->execute("SET VARIABLE $variable $value");
+	return $self->execute("SET VARIABLE $variable \"$value\"");
 }
 
 =item $AGI->get_variable($variable)
