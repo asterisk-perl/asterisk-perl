@@ -266,6 +266,7 @@ sub say_number {
 	$digits = '""' if (!defined($digits));
 
 	return -1 if (!defined($number));
+	$number =~ s/\D//g;
 	$ret = $self->execute("SAY NUMBER $number $digits");
 
 	$self->callback($ret) if ($ret == -1);
@@ -294,6 +295,7 @@ sub say_digits {
 	$digits = '""' if (!defined($digits));
 
 	return -1 if (!defined($number));
+	$number =~ s/\D//g;
 	$ret = $self->execute("SAY DIGITS $number $digits");
 	$self->callback($ret) if ($ret == -1);
 
