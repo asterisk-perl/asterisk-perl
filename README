@@ -8,6 +8,9 @@ system.
 The main site for these files is http://asterisk.gnuinter.net, or soon
 to be found at a CPAN mirror near you.
 
+Some documentation is in the the perl modules, use perldoc to read it
+(example: perldoc Asterisk::AGI)
+
 To install these modules just do:
 	perl Makefile.PL
 	make all

@@ -31,6 +31,8 @@ asterisk open source pbx via AGI (asterisk gateway interface)
 
 =over 4
 
+=head1 AGI COMMANDS
+
 =cut
 
 sub new {
@@ -38,6 +40,7 @@ sub new {
 	my $self = {};
 	$self->{'callback'} = undef;
 	$self->{'status'} = undef;
+	$self->{'lastresponse'} = undef;
 	bless $self, ref $class || $class;
 	return $self;
 }
@@ -125,6 +128,7 @@ sub _checkresult {
 	return undef if (!defined($response));
 	my $result = undef;
 
+	$self->_lastresponse($response);
 	if ($response =~ /^200/) {
 		if ($response =~ /result=(-?\d+)/) {
 			$result = $1;
@@ -149,6 +153,32 @@ sub _status {
 	}
 }
 
+sub _lastresponse {
+	my ($self, $response) = @_;
+
+	if (defined($response)) {
+		$self->{'lastresponse'} = $response;
+	} else {
+		return $self->{'lastresponse'};
+	}
+}
+
+=item $AGI->stream_file($filename, $digits)
+
+Executes AGI Command "STREAM FILE $filename $digits"
+
+This command instructs Asterisk to play the given sound file and listen for the given dtmf digits. The
+fileextension must not be used in the filename because Asterisk will find the most appropriate file
+type.
+
+Example: $AGI->stream_file('demo-echotest', '0123');
+
+Returns: -1 on error or hangup,
+0 if playback completes without a digit being pressed,
+or the ASCII numerical value of the digit if a digit was pressed
+
+=cut
+
 sub stream_file {
 	my ($self, $filename, $digits) = @_;
 
@@ -164,6 +194,19 @@ sub stream_file {
 	return $ret;
 }
 
+=item $AGI->send_text($text)
+
+Executes AGI Command "SEND TEXT "$text"
+
+Sends the given text on a channel.  Most channels do not support the transmission of text.
+
+Example: $AGI->send_text('You've got mail!');
+
+Returns: -1 on error or hangup,
+0 if the text was sent or if the channel does not support text transmission.
+
+=cut
+
 sub send_text {
 	my ($self, $text) = @_;
 
@@ -176,6 +219,19 @@ sub send_text {
 	return $ret;
 }
 
+=item $AGI->send_image($image)
+
+Executes AGI Command "SEND IMAGE $image
+
+Sends the given image on a channel.  Most channels do not support the transmission of images.
+
+Example: $AGI->send_image('image.png');
+
+Returns: -1 on error or hangup,
+0 if the image was sent or if the channel does not support image transmission.
+
+=cut
+
 sub send_image {
 	my ($self, $image) = @_;
 
@@ -187,6 +243,20 @@ sub send_image {
 
 	return $ret;
 }
+
+=item $AGI->say_number($number, $digits)
+
+Executes AGI Command "SAY NUMBER $number $digits"
+
+Says the given $number, returning early if any of the $digits are received.
+
+Example: $AGI->say_number('98765');
+
+Returns: -1 on error or hangup,
+0 if playback completes without a digit being pressed, 
+or the ASCII numerical value of the digit of one was pressed.
+
+=cut
 
 sub say_number {
 	my ($self, $number, $digits) = @_;
@@ -203,6 +273,20 @@ sub say_number {
 	return $ret;
 }
 
+=item $AGI->say_digits($number, $digits)
+
+Executes AGI Command "SAY DIGITS $number $digits"
+
+Says the given digit string $number, returning early if any of the $digits are received.
+
+Example: $AGI->say_digits('8675309');
+
+Returns: -1 on error or hangup,
+0 if playback completes without a digit being pressed, 
+or the ASCII numerical value of the digit of one was pressed.
+
+=cut
+
 sub say_digits {
         my ($self, $number, $digits) = @_;
 
@@ -215,6 +299,19 @@ sub say_digits {
 
 	return $ret;
 }
+
+=item $AGI->answer()
+
+Executes AGI Command "ANSWER"
+
+Answers channel if not already in answer state
+
+Example: $AGI->answer();
+
+Returns: -1 on channel failure, or
+0 if successful
+
+=cut
 
 sub answer {
 	my ($self) = @_;
@@ -239,12 +336,36 @@ sub get_data {
 	return $ret;
 }
 
+=item $AGI->set_callerid($number)
+
+Executes AGI Command "SET CALLERID $number"
+
+Changes the callerid of the current channel to <number>
+
+Example: $AGI->set_callerid('9995551212');
+
+Returns: Always returns 1
+
+=cut
+
 sub set_callerid {
 	my ($self, $number) = @_;
 
 	return if (!defined($number));
 	return $self->execute("SET CALLERID $number");
 }
+
+=item $AGI->set_context($context)
+
+Executes AGI Command "SET CONTEXT $context"
+
+Changes the context for continuation upon exiting the agi application
+
+Example: $AGI->set_context('dialout');
+
+Returns: Always returns 0
+
+=cut
 
 sub set_context {
 	my ($self, $context) = @_;
@@ -253,12 +374,36 @@ sub set_context {
 	return $self->execute("SET CONTEXT $context");
 }
 
+=item $AGI->set_extension($extension)
+
+Executes AGI Command "SET EXTENSION $extension"
+
+Changes the extension for continuation upon exiting the agi application
+
+Example: $AGI->set_extension('7');
+
+Returns: Always returns 0
+
+=cut
+
 sub set_extension {
 	my ($self, $extension) = @_;
 
 	return -1 if (!defined($extension));
 	return $self->execute("SET EXTENSION $extension");
 }
+
+=item $AGI->set_priority($priority)
+
+Executes AGI Command "SET PRIORITY $priority"
+
+Changes the priority for continuation upon exiting the agi application
+
+Example: $AGI->set_priority(1);
+
+Returns: Always returns 0
+
+=cut
 
 sub set_priority {
 	my ($self, $priority) = @_;
@@ -321,11 +466,36 @@ sub set_autohangup {
 	return $self->execute("SET AUTOHANGUP $time");
 }
 
+=item $AGI->hangup()
+
+Executes AGI Command "HANGUP"
+
+Hangs up the current channel.  It is left to the AGI script to exit properly, otherwise you could end up with zombies
+
+Example: $AGI->hangup();
+
+Returns: Always returns 1
+
+=cut
+
 sub hangup {
 	my ($self) = @_;
 
 	return $self->execute("HANGUP");
 }
+
+=item $AGI->exec($app, $options)
+
+Executes AGI Command "EXEC $app $options"
+
+The most powerful AGI command.  Executes the given application passing the given options.
+
+Example: $AGI->exec('Dial', 'Zap/g2/8005551212');
+
+Returns: -2 on failure to find application, or
+whatever the given application returns
+
+=cut
 
 sub exec {
 	my ($self, $app, $options) = @_;
@@ -340,6 +510,49 @@ sub channel_status {
 	return $self->execute("CHANNEL STATUS");
 }
 
+=item $AGI->set_variable($variable, $value)
+
+Executes AGI Command "SET VARIABLE $variable $value"
+
+Sets the channel variable <variablename> to <value>
+
+Example: $AGI->set_variable('status', 'authorized');
+
+Returns: Always returns 1
+
+=cut
+
+sub set_variable {
+	my ($self, $variable, $value) = @_;
+
+	return $self->execute("SET VARIABLE $variable $value");
+}
+
+=item $AGI->get_variable($variable)
+
+Executes AGI Command "GET VARIABLE $variablename"
+
+Gets the channel variable <variablename>
+
+Example: $AGI->get_variable('status');
+
+Returns: The value of the variable, or undef if variable does not exist
+
+=cut
+
+sub get_variable {
+	my ($self, $variable) = @_;
+
+	my $result = undef;
+
+	if ($self->execute("GET VARIABLE $variable")) {
+		my $tempresult = $self->_lastresponse();
+		if ($tempresult =~ /\((\w+)\)/) {
+			$result = $1;
+		}
+	}
+	return $result;
+}
 
 1;
 
