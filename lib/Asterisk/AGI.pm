@@ -676,6 +676,12 @@ sub noop {
 	return $self->execute("NOOP");
 }
 
+sub set_music {
+	my ($self, $mode, $class) = @_;
+
+	return $self->execute("SET MUSIC $mode $class");
+}
+
 1;
 
 __END__
