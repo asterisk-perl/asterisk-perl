@@ -50,9 +50,6 @@ sub ReadParse {
 
 	$fh = \*STDIN if (!$fh);
 
-	select($fh);
-	$| = 1;
-	
 	while (<$fh>) {
 		chomp;
 		last unless length($_);
@@ -102,8 +99,7 @@ sub _execcommand {
 
 	$fh = \*STDOUT if (!$fh);
 
-	select($fh);
-	$| = 1;
+	select ((select ($fh), $| = 1)[0]);
 
 	return -1 if (!defined($command));
 
