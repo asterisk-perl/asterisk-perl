@@ -554,6 +554,24 @@ sub get_variable {
 	return $result;
 }
 
+=item $AGI->log($message, $level)
+
+Executes AGI Command "LOG $message $level"
+
+Logs $message with verboselevel $level
+
+Example: $AGI->log("System Crashed\n", 1);
+
+Returns: Always returns 1
+
+=cut
+
+sub log {
+	my ($self, $message, $level) = @_;
+
+	return $self->execute("LOG \"$message\" $level");
+}
+
 1;
 
 __END__
