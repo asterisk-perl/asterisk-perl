@@ -8,7 +8,7 @@ Asterisk::Voicemail - Stuff to deal with asterisk voicemail
 
 =head1 SYNOPSIS
 
-stuff goes here
+This is not completed yet
 
 =head1 DESCRIPTION
 

@@ -1,6 +1,10 @@
 #!/usr/bin/perl
+#
+# Simple AGI Application to show some of the features of AGI
+# 
+# Written by: James Golovich <james@gnuinter.net>
+#
 
-use lib './lib', '../lib';
 use Asterisk::AGI;
 
 $AGI = new Asterisk::AGI;
