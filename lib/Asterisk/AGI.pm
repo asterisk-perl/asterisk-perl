@@ -185,7 +185,7 @@ sub stream_file {
 	return -1 if (!defined($filename));
 	$ret =  $self->execute("STREAM FILE $filename $digits");
 
-	$self->callback($ret) if ($ret == -1);
+	$self->callback($ret) if ($ret eq -1);
 
 	return $ret;
 }
@@ -210,7 +210,7 @@ sub send_text {
 
 	return $ret if (!defined($text));
 	$ret = $self->execute("SEND TEXT \"$text\"");
-	$self->callback($ret) if ($ret == -1);
+	$self->callback($ret) if ($ret eq -1);
 
 	return $ret;
 }
@@ -235,7 +235,7 @@ sub send_image {
 	return -1 if (!defined($image));
 
 	$ret = $self->execute("SEND IMAGE $image");
-	$self->callback($ret) if ($ret == -1);
+	$self->callback($ret) if ($ret eq -1);
 
 	return $ret;
 }
@@ -265,7 +265,7 @@ sub say_number {
 	$number =~ s/\D//g;
 	$ret = $self->execute("SAY NUMBER $number $digits");
 
-	$self->callback($ret) if ($ret == -1);
+	$self->callback($ret) if ($ret eq -1);
 
 	return $ret;
 }
@@ -293,7 +293,7 @@ sub say_digits {
 	return -1 if (!defined($number));
 	$number =~ s/\D//g;
 	$ret = $self->execute("SAY DIGITS $number $digits");
-	$self->callback($ret) if ($ret == -1);
+	$self->callback($ret) if ($ret eq -1);
 
 	return $ret;
 }
@@ -316,7 +316,7 @@ sub answer {
 
 	my $ret = 0;
 	$ret = $self->execute('ANSWER');
-	$self->callback($ret) if ($ret == -1);
+	$self->callback($ret) if ($ret eq -1);
 
 	return $ret;
 
@@ -340,7 +340,7 @@ sub get_data {
 
 	return -1 if (!defined($filename));
 	$ret = $self->execute("GET DATA $filename $timeout $maxdigits");
-	$self->callback($ret) if ($ret == -1);
+	$self->callback($ret) if ($ret eq -1);
 
 	return $ret;
 }
@@ -428,7 +428,7 @@ sub receive_char {
 #wait forever if timeout is not set. is this the prefered default?
 	$timeout = 0 if (!defined($timeout));
 	$ret = $self->execute("RECEIVE CHAR $timeout");
-	$self->callback($ret) if ($ret == -1);
+	$self->callback($ret) if ($ret eq -1);
 
 	return $ret;
 
@@ -449,7 +449,7 @@ sub wait_for_digit {
 	$timeout = -1 if (!defined($timeout));
 	$ret = $self->execute("WAIT FOR DIGIT $timeout");
 
-	$self->callback($ret) if ($ret == -1);
+	$self->callback($ret) if ($ret eq -1);
 
 	return $ret;
 }
@@ -463,7 +463,7 @@ sub record_file {
 	$digits = '""' if (!defined($digits));
 	$ret = $self->execute("RECORD FILE $filename $format $digits $timeout");
 
-	$self->callback($ret) if ($ret == -1);
+	$self->callback($ret) if ($ret eq -1);
 
 	return $ret;
 }
