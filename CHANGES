@@ -1,3 +1,4 @@
+	Assded new module Asterisk::QCall
 	Added new AGI command log
 
 0.04	Started adding documentation to Asterisk::AGI (perldoc Asterisk::AGI)
