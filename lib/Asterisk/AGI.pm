@@ -324,6 +324,17 @@ sub answer {
 
 }
 
+=item $AGI->get_data($filename, $timeout, $maxdigits)
+
+Executes AGI Command "GET DATA $filename $timeout $maxdigits"
+
+Streams $filename and returns when $maxdigits have been received or
+when $timeout has been reached.  Timeout is specified in ms
+
+Example: $AGI->get_data('demo-welcome', 15000, 5);
+
+=cut
+
 sub get_data {
 	my ($self, $filename, $timeout, $maxdigits) = @_;
 
