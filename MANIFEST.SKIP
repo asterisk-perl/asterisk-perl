@@ -1,0 +1,8 @@
+\bCVS\b
+^Makefile$
+^MANIFEST\.
+~$
+^blib/
+^pm_to_bib$
+\.old$
+

@@ -1,7 +1,7 @@
 use ExtUtils::MakeMaker;
 
 WriteMakefile (
-        NAME		=> 'Asterisk',
+        NAME		=> 'asterisk-perl',
         VERSION_FROM	=> 'lib/Asterisk.pm',
         AUTHOR		=> 'James Golovich <james@gnuinter.net>',
         ABSTRACT	=> 'Asterisk Perl Interface',
