@@ -40,7 +40,7 @@ sub new {
 	$self->{OUTDIR} = '/var/spool/asterisk/outgoing';
 	$self->{OUTTIME} = undef;
 	$self->{OUTVARS} = {};
-	$self->{ALLOWEDVARS} = [ 'channel', 'maxretries', 'retrytime', 'waittime', 'context', 'extension', 'priority', 'application', 'data', 'callerid' ]; 
+	$self->{ALLOWEDVARS} = [ 'channel', 'maxretries', 'retrytime', 'waittime', 'context', 'extension', 'priority', 'application', 'data', 'callerid', 'setvar']; 
 	bless $self, ref $class || $class;
 	return $self;
 }

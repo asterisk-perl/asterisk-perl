@@ -1,3 +1,4 @@
+	Added 'SetVar' as available keyword in Outgoing.pm
 	Modified Asterisk::AGI set_variable to always quote the value
 
 0.08	Fixed Asterisk::AGI check_result regex so get_data works with '*'
