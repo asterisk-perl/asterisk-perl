@@ -1,0 +1,72 @@
+#!/usr/bin/perl
+#
+# Use Reverse Number Database on the net to correct callerid info
+#
+# Written by: James Golovich <james@gnuinter.net>
+#
+
+
+use Asterisk::AGI;
+use LWP::UserAgent;
+
+
+$AGI = new Asterisk::AGI;
+
+my %input = $AGI->ReadParse();
+
+my $callerid = $input{'callerid'};
+#$callerid = '(734) 285-6435';
+$callerid = '(517) 540-9674';
+
+
+#Exit if there is already a name in callerid
+if ($callerid =~ /[A-Za-z]+/) {
+	exit(0);
+}
+
+if ($callerid =~ /\((\d{3})\)\s*(\d{3})[-.]*(\d{4})/) {
+	$npa = $1;
+	$nxx = $2;
+	$station = $3;
+} elsif ($callerid =~ /^(\d{3})\s*(\d{3})\s*(\d{4})$/) {
+	$npa = $1;
+	$nxx = $2;
+	$station = $3;
+}
+
+	if ($name = anywho_lookup($npa, $nxx, $station)) { }
+
+
+	if ($name) {
+	$newcallerid = "\"$name <($npa) $nxx-$station>\"";
+	$AGI->set_callerid($newcallerid);
+	}
+
+
+
+sub anywho_lookup {
+	my ($npa, $nxx, $station) = @_;
+
+	my $ua = LWP::UserAgent->new();
+
+	my $URL = 'http://www.anywho.com/qry/wp_rl';
+
+	$URL .= '?npa=' . $npa . '&telephone=' . $nxx . $station;
+
+
+	my $req = new HTTP::Request GET => $URL;
+	my $res = $ua->request($req);
+
+	if ($res->is_success()) {
+		if ($res->content =~ /<!-- listing -->(.*)<!-- \/listing -->/s) {
+			my $listing = $1;
+			if ($listing =~ /<B>(.*)<\/B>/) { 
+				my $clidname = $1;
+				return $clidname;
+			}
+
+		}
+	}
+	return '';
+}
+

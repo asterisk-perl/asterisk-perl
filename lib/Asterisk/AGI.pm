@@ -50,7 +50,7 @@ sub ReadParse {
 
 	my %input = ();
 
-	$fh = STDIN if (!$fh);
+	$fh = \*STDIN if (!$fh);
 
 	select($fh);
 	$| = 1;
@@ -102,7 +102,7 @@ sub execute {
 sub _execcommand {
 	my ($self, $command, $fh) = @_;
 
-	$fh = STDOUT if (!$fh);
+	$fh = \*STDOUT if (!$fh);
 
 	select($fh);
 	$| = 1;
@@ -116,7 +116,7 @@ sub _readresponse {
 	my ($self, $fh) = @_;
 
 	my $response = undef;
-	$fh = STDIN if (!$fh);
+	$fh = \*STDIN if (!$fh);
 	$response = <$fh> || return '200 result=-1 (noresponse)';
 	chomp($response);
 	return $response;
