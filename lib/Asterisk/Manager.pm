@@ -19,7 +19,9 @@ use Asterisk::Manager;
 my $astman = new Asterisk::Manager;
 
 $astman->user('username');
+
 $astman->secret('test');
+
 $astman->host('localhost');
 
 $astman->connect || die "Could not connect to " . $astman->host . "!\n";

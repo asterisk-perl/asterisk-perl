@@ -4,6 +4,26 @@ package Asterisk::Outgoing;
 
 Asterisk::Outgoing - Create outgoing call queue file
 
+=head1 SYNOPSIS
+
+use Asterisk::Outgoing;
+
+my $out = new Asterisk::Outgoing;
+
+$out->setvariable('Channel', 'Zap/1/');
+
+$out->setvariable('MaxRetries', 0);
+
+$out->setvariable('RetryTime', 60);
+
+$out->setvariable('WaitTime', 60);
+
+$out->setvariable('Application', 'Playback');
+
+$out->setvariable('Data', 'beep');
+
+$out->create_outgoing;
+
 =cut
 
 require 5.004;
