@@ -554,22 +554,22 @@ sub get_variable {
 	return $result;
 }
 
-=item $AGI->log($message, $level)
+=item $AGI->verbose($message, $level)
 
-Executes AGI Command "LOG $message $level"
+Executes AGI Command "VERBOSE $message $level"
 
 Logs $message with verboselevel $level
 
-Example: $AGI->log("System Crashed\n", 1);
+Example: $AGI->verbose("System Crashed\n", 1);
 
 Returns: Always returns 1
 
 =cut
 
-sub log {
+sub verbose {
 	my ($self, $message, $level) = @_;
 
-	return $self->execute("LOG \"$message\" $level");
+	return $self->execute("VERBOSE \"$message\" $level");
 }
 
 1;
