@@ -173,6 +173,13 @@ sub get_data {
 	return $self->execute("GET DATA $filename $timeout $maxdigits");
 }
 
+sub set_callerid {
+	my ($self, $number) = @_;
+
+	return if (!defined($number));
+	return $self->execute("SET CALLERID $number");
+}
+
 sub set_context {
 	my ($self, $context) = @_;
 
