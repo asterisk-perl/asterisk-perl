@@ -1,8 +1,5 @@
 package Asterisk::Manager;
 
-# Asterisk PBX monitoring module
-# Author: Jean-Denis Girard <jd-girard@esoft.pf> http://www.esoft.pf/
-
 require 5.004;
 
 use Asterisk;
@@ -11,7 +8,31 @@ use IO::Socket;
 use strict;
 use warnings;
 
-my $EOL = "\015\012";
+=head1 NAME
+
+Asterisk::Manager - Asterisk Manager Interface
+
+=head1 SYNOPSIS
+
+use Asterisk::Manager;
+
+my $astman = new Asterisk::Manager;
+
+$astman->user('username');
+$astman->secret('test');
+$astman->host('localhost');
+
+$astman->connect || die "Could not connect to " . $astman->host . "!\n";
+
+$astman->disconnect;
+
+=head1 DESCRIPTION
+
+This module provides a simple interface to the asterisk manager interface.
+
+=cut
+
+my $EOL = "\r\n";
 my $BLANK = $EOL x 2;
 
 my $VERSION = '0.01';
@@ -20,14 +41,18 @@ sub version { $VERSION; }
 
 sub new {
 	my ($class, %args) = @_;
+
 	my $self = {};
-	$self->{_CONN} = undef;
+	$self->{_CONNFD} = undef;
 	$self->{_PROTOVERS} = undef;
 	$self->{_ERRORSTR} = undef;
-	$self->{HOST} = 'localhost';
-	$self->{PORT} = 5038;
-	$self->{USER} = undef;
-	$self->{SECRET} = undef;
+	$self->{_HOST} = 'localhost';
+	$self->{_PORT} = 5038;
+	$self->{_USER} = undef;
+	$self->{_SECRET} = undef;
+	$self->{_EVENTCB} = {};
+	$self->{_DEBUG} = 0;
+	$self->{_CONNECTED} = 0;
 	bless $self, ref $class || $class;
 	return $self;
 }
@@ -38,52 +63,50 @@ sub user {
 	my ($self, $user) = @_;
 
 	if ($user) {
-		$self->{USER} = $user;
+		$self->{_USER} = $user;
 	}
 
-	return $self->{USER};
+	return $self->{_USER};
 }
 
 sub secret {
 	my ($self, $secret) = @_;
 
 	if ($secret) {
-		$self->{SECRET} = $secret;
+		$self->{_SECRET} = $secret;
 	}
 
-	return $self->{SECRET};
+	return $self->{_SECRET};
 }
 
 sub host {
 	my ($self, $host) = @_;
 
 	if ($host) {
-		$self->{HOST} = $host;
+		$self->{_HOST} = $host;
 	}
 
-	return $self->{HOST};
+	return $self->{_HOST};
 }
 
 sub port {
 	my ($self, $port) = @_;
 
 	if ($port) {
-		$self->{PORT} = $port;
+		$self->{_PORT} = $port;
 	}
 
-	return $self->{PORT};
+	return $self->{_PORT};
 }
 
-sub _read_response {
-	my( $conn ) = @_;
-	my @resp = ();
-	while( <$conn> ) {
-		last if $_ eq $EOL;
-		s/$EOL//g;
-		chomp;
-		push @resp, $_ if $_;
+sub connected {
+	my ($self, $connected) = @_;
+
+	if (defined($connected)) {
+		$self->{_CONNECTED} = $connected;
 	}
-	return wantarray ? @resp:$resp[0];
+
+	return $self->{_CONNECTED};
 }
 
 sub error {
@@ -91,14 +114,55 @@ sub error {
 
 	if ($error) {
 		$self->{_ERRORSTR} = $error;
-		return '';
 	}
+
 	return $self->{_ERRORSTR};
 }
 
-# connect( $host, $port, $user, $secret)
-# Make connection to Asterisk server $host on port $port
-# and login with username $user, password $secret
+sub debug {
+	my ($self, $debug) = @_;
+
+	if ($debug) {
+		$self->{_DEBUG} = $debug;
+	}
+
+	return $self->{_DEBUG};
+}
+
+sub connfd {
+	my ($self, $connfd) = @_;
+
+	if ($connfd) {
+		$self->{_CONNFD} = $connfd;
+	}
+
+	return $self->{_CONNFD};
+}
+
+sub read_response {
+	my ($self, $connfd) = @_;
+
+	my @response;
+
+	if (!$connfd) {
+		$connfd = $self->connfd;
+	}
+
+	while (my $line = <$connfd>) {
+		last if ($line eq $EOL);
+
+		if (wantarray) {
+			$line =~ s/$EOL//g;
+			push(@response, $line) if $line;
+		} else {
+			$response[0] .= $line;
+		}
+
+	}
+
+	return wantarray ? @response : $response[0];
+}
+
 sub connect {
 	my ($self) = @_;
 
@@ -106,43 +170,156 @@ sub connect {
 	my $port = $self->port;
 	my $user = $self->user;
 	my $secret = $self->secret;
-	# Connect...
-	my $conn = new IO::Socket::INET( Proto => "tcp",
-					   PeerAddr  => $host,
-					   PeerPort  => $port
-					 ) or return $self->error("Connection refused ($host:$port)\n");
+
+	my $conn = new IO::Socket::INET( Proto => 'tcp',
+					 PeerAddr => $host,
+					 PeerPort => $port
+					);
+	if (!$conn) {
+		$self->error("Connection refused ($host:$port)\n");
+		return undef;
+	}
+
 	$conn->autoflush(1);
 
-	my $in = <$conn>;
-	$in =~ s/$EOL//g;
-	my( $manager, $version ) = split '/',  $in;
-	return $self->error("Unknown protocol\n") unless $manager eq 'Asterisk Call Manager';
+	my $input = <$conn>;
+	$input =~ s/$EOL//g;
+
+	my ($manager, $version) = split('/', $input);
+
+	if ($manager !~ /Asterisk Call Manager/) {
+		return $self->error("Unknown Protocol\n");
+	}
 
 	$self->{_PROTOVERS} = $version;
-	$self->{_CONN} = $conn;
+	$self->connfd($conn);
 
-	# Login...
-#	print $conn "Action: Login${EOL}Username: $user${EOL}Secret: $secret$BLANK";
-#	my %resp = map { split(': ', $_); } _read_response $conn;
-#	my %resp = map { split(': ', $_); } $self->action("Login${EOL}Username: $user${EOL}Secret: $secret");
-	my %resp = $self->action("Login${EOL}Username: $user${EOL}Secret: $secret",1);
+	my %resp = $self->sendcommand(  Action => 'Login',
+					Username => $user,
+					Secret => $secret
+				     );
 
-	return $self->error("Authentication failed for user $user\n") 
-		unless $resp{Response} eq 'Success' && 
-			$resp{Message} eq 'Authentication accepted';
-	return 1;
+	if ( ($resp{Response} ne 'Success') && ($resp{Message} ne 'Authentication accepted') ) {
+		$self->error("Authentication failed for user $user\n");
+		return undef;
+	}
+
+	$self->connected(1);
+
+	return $conn;
+}
+
+sub astman_h2s {
+	my ($self, %thash) = @_;
+
+	my $tstring = '';
+
+	foreach my $key (keys %thash) {
+		$tstring .= $key . ': ' . $thash{$key} . ${EOL};
+	}
+
+	return $tstring;
+}
+
+sub astman_s2h {
+	my ($self, $tstring) = @_;
+
+	my %thash;
+
+	foreach my $line (split(/$EOL/, $tstring)) {
+		if ($line =~ /(\w*):\s*(\w*)/) {
+			$thash{$1} = $2;
+		}
+	}
+
+	return %thash;
+}
+
+#$want is how you want the data returned
+#$want = 0 (default) returns the results in a hash
+#$want = 1 returns the results in a large string
+#$want = 2 returns the results in an array
+sub sendcommand {
+	my ($self, %command, $want) = @_;
+
+	if (!defined($want)) {
+		$want = 0;
+	}
+	
+	my $conn = $self->connfd || return;
+	my $cstring = $self->astman_h2s(%command);
+
+	$conn->send("$cstring$EOL");
+
+	if ($want == 1) {
+		my $response = $self->read_response($conn);
+		return $response;
+	}
+
+	my @resp = $self->read_response($conn);
+
+	if ($want == 2) {
+		return @resp;
+	} else {
+		return map { split(': ', $_) } @resp;
+	}
+}
+
+sub setcallback {
+	my ($self, $event, $function) = @_;
+
+	if (defined($function) && ref($function) eq 'CODE') {
+		$self->{_EVENTCB}{$event} = $function;
+	}
+}
+
+sub eventcallback {
+	my ($self, %resp) = @_;
+
+	my $callback;
+	my $event = $resp{Event};
+
+	return if (!$event);
+
+	if (defined($self->{_EVENTCB}{$event})) {
+		$callback = $self->{_EVENTCB}{$event};
+	} elsif (defined($self->{_EVENTCB}{DEFAULT})) {
+		$callback = $self->{_EVENTCB}{DEFAULT};
+	} else {
+		return;
+	}
+
+	return &{$callback}(%resp);
+}
+
+sub eventloop {
+	my ($self) = @_;
+
+	while (1) {
+		$self->handleevent;
+	}
+}
+
+sub handleevent {
+	my ($self) = @_;
+
+	my %resp = map { split(': ', $_); } $self->read_response;
+	$self->eventcallback(%resp);
+
+	return %resp;
 }
 
 sub action {
-	my ($self, $command, $hash) = @_;
+	my ($self, $command, $wanthash) = @_;
 
 	return if (!$command);
-	my $conn = $self->{_CONN};
-	print $conn "Action: $command$BLANK";
-	my @resp = _read_response($conn);
 
-#	return wantarray ? @resp:$resp[0];
-	if ( $hash ) {
+	my $conn = $self->connfd || return;
+
+	print $conn "Action: $command" . $BLANK;
+	my @resp = $self->read_response($conn);
+
+	if ($wanthash) {
 		return map { split(': ', $_) } @resp;
 	} elsif (wantarray) {
 		return @resp;
@@ -151,110 +328,30 @@ sub action {
 	}
 }
 
-sub logoff {
-	my( $self ) = @_;
-	my $conn = $self->{_CONN};
-#	print $conn "Action: Logoff$BLANK";
-#	my %resp = map { split(': ', $_); } _read_response $conn;
-	my %resp = $self->action("Logoff",1);
-	return 0 unless $resp{Response} eq 'Goodbye';
-	return 1;
+sub command {
+	my ($self, $command) = @_;
+
+	return if (!$command);
+
+	return $self->sendcommand('Action' => 'Command',
+				  'Command' => $command, 1 );
 }
 
-# Queues Status: return a hash reference: 
-# 			queue_name 	=>	[active_calls,
-# 									[member1, member2... ],
-# 									[call1, call2... ]
-# 								]
-sub queues {
-	my( $self ) = @_;
-	my $conn = $self->{_CONN};
-#	print $conn "Action: Queues$BLANK";
-#	my @lines = _read_response $conn;
-	my @lines = $self->action("Queues");
+sub disconnect {
+	my ($self) = @_;
 
-	# Sample response (to explain how parsing of @lines to %queues is done)
-	#queue        has 1 calls (max unlimited)
-	#   Members:
-	#      IAX/jdg
-	#      IAX/fpo
-	#   Callers:
-	#      1. Zap/2-1 (wait: 0:02)
-	#queue_op1    has 0 calls (max unlimited)
-	#   Members:
-	#      IAX/jdg
-	#   No Callers
-	my %queues;
-	for( my $i=0; $i<@lines; ) {
-		my( $l, @members, @callers );
-		$l = $lines[$i++];
-		my( $q, undef, $n ) = split /\s+/, $l; # Queue name
+	my $conn = $self->connfd;
 
-		unless( $l =~ /No\sMembers/ ) { # Scan callers
-			$i++; # Forget 'Members:' line
-			for( ; $i<@lines; ){
-				$l=$lines[$i++];
-	 			last if $l =~ /Callers/;
-				$l =~ s/^\s+//;
-				push @members, $l;
-			}
-		}
+	my %resp = $self->sendcommand('Action' => 'Logoff');
 
-		unless( $l =~ /No\sCallers/ ) { # Scan callers
-			for( ; $i<@lines; ){
-				$l=$lines[$i++];
- 				last if $l =~ /^\S/;
-				$l =~ s/^\s+//;
-				push @callers, $l;
-			}
-			$i--;
-		}
-		$queues{$q} = [ $n, \@members, \@callers]
+
+	if ($resp{Response} eq 'Goodbye') {
+		$self->{_CONNFD} = undef;
+		$self->connected(0);
+		return 1;
 	}
 
-	return \%queues;
+	return 0;
 }
 
-# IAX peers: return a hash reference: 
-# 			peer_name 	=>	[ username, host, dynamic, mask, port ]
-sub iax_peers {
-	my( $self ) = @_;
-	my $conn = $self->{_CONN};
-#	print $conn "Action: IAXpeers$BLANK";
-	my %peers = map { 
-			  my @p = split( /\s+/, $_);
-			  my $k = shift @p;
-			  $p[1] = undef if $p[1] eq '(Unspecified)';
-			  $p[2] = 0 if $p[2] eq '(S)';
-			  $p[2] = 1 if $p[2] eq '(D)';
-			  ($k, \@p );
-	} $self->action("IAXpeers");
-#	} _read_response $conn;
-
-# Sample response (to explain how %peers is built)
-#Name             Username         Host                 Mask             Port
-#jdg              jdg              192.168.10.100  (D)  255.255.255.255  5036
-#fpo              fpo              (Unspecified)   (D)  255.255.255.255  0
-	delete $peers{Name};
-	return \%peers;
-}
-
-# Send event status to a callback routine that should be accept a hash
-# reference as argument.
-# If successfull, this function never returns...
-sub status {
-	my( $self, $callback ) = @_;
-	my $conn = $self->{_CONN};
-#	print $conn "Action: Status$BLANK";
-#	my %resp = map { split(': ', $_); } _read_response $conn;
-	my %resp = $self->action("Status");
-	return 0	unless $resp{Response} eq 'Success' && 
-			$resp{Message} eq 'Channel status will follow';
-
-	while( 1 ) {
-		%resp = map { split(': ', $_); } _read_response $conn;
-		&$callback( \%resp );
-	}
-}
 1;
-
