@@ -124,7 +124,7 @@ sub _checkresult {
 
 	$self->_lastresponse($response);
 	if ($response =~ /^200/) {
-		if ($response =~ /result=(-?\d+)/) {
+		if ($response =~ /result=(-?[\d*#]+)/) {
 			$result = $1;
 		}
 	} elsif ($response =~ /\(noresponse\)/) {

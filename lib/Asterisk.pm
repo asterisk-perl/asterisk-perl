@@ -2,7 +2,7 @@ package Asterisk;
 
 require 5.004;
 
-$VERSION = '0.07';
+$VERSION = '0.08';
 
 sub version { $VERSION; }
 
