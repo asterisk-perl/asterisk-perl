@@ -466,11 +466,12 @@ sub set_autohangup {
 	return $self->execute("SET AUTOHANGUP $time");
 }
 
-=item $AGI->hangup()
+=item $AGI->hangup($channel)
 
-Executes AGI Command "HANGUP"
+Executes AGI Command "HANGUP $channel"
 
-Hangs up the current channel.  It is left to the AGI script to exit properly, otherwise you could end up with zombies
+Hangs up the passed $channel, or the current channel if $channel is not passed.
+It is left to the AGI script to exit properly, otherwise you could end up with zombies.
 
 Example: $AGI->hangup();
 
@@ -479,9 +480,13 @@ Returns: Always returns 1
 =cut
 
 sub hangup {
-	my ($self) = @_;
+	my ($self, $channel) = @_;
 
-	return $self->execute("HANGUP");
+	if ($channel) {
+		return $self->execute("HANGUP $channel");
+	} else {
+		return $self->execute("HANGUP");
+	}
 }
 
 =item $AGI->exec($app, $options)
@@ -570,6 +575,85 @@ sub verbose {
 	my ($self, $message, $level) = @_;
 
 	return $self->execute("VERBOSE \"$message\" $level");
+}
+
+=item $AGI->database_get($family, $key)
+
+Executes AGI Command "DATABASE GET $family $key"
+
+Example: $var = $AGI->database_get('test', 'status');
+
+Returns: The value of the variable, or undef if variable does not exist
+
+=cut
+
+sub database_get {
+	my ($self, $family, $key) = @_;
+
+	my $result = undef;
+
+	if ($self->execute("DATABASE GET $family $key")) {
+		my $tempresult = $self->_lastresponse();
+		if ($tempresult =~ /\((.*)\)/) {
+			$result = $1;
+		}
+	}
+	return $result;
+}
+
+=item $AGI->database_put($family, $key, $value)
+
+Executes AGI Command "DATABASE PUT $family $key $value"
+
+Set/modifes database entry <family>/<key> to <value>
+
+Example: $AGI->database_put('test', 'status', 'authorized');
+
+Returns: 1 on success, 0 otherwise
+
+=cut
+
+sub database_put {
+	my ($self, $family, $key, $value) = @_;
+
+	return $self->execute("DATABASE PUT $family $key $value");
+}
+
+=item $AGI->database_del($family, $key)
+
+Executes AGI Command "DATABASE DEL $family $key"
+
+Removes database entry <family>/<key>
+
+Example: $AGI->database_del('test', 'status');
+
+Returns: 1 on success, 0 otherwise
+
+=cut
+
+sub database_del {
+	my ($self, $family, $key) = @_;
+
+	return $self->execute("DATABASE DEL $family $key");
+}
+
+=item $AGI->database_deltree($family, $key)
+
+Executes AGI Command "DATABASE DELTREE $family $key"
+
+Deletes a family or specific keytree within a family in the Asterisk database
+
+Example: $AGI->database_deltree('test', 'status'); 
+Example: $AGI->database_deltree('test');
+
+Returns: 1 on success, 0 otherwise
+
+=cut
+
+sub database_deltree {
+	my ($self, $family, $key) = @_;
+
+	return $self->execute("DATABASE DELTREE $family $key");
 }
 
 1;

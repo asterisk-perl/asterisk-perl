@@ -1,7 +1,9 @@
+0.06	Added new AGI example agi-enum.agi
 	Added new module Asterisk::Outgoing
-	From Jean-Denis Girard <jd-girard@esoft.pf>
-		Added new module Asterisk::Manager
+	From Jean-Denis Girard <jd-girard@esoft.pf>:
 		Modified get_variable in Asterisk:AGI
+	Added new AGI commands database_get, database_put, database_del, and database_deltree
+	Updated AGI hangup functionality to allow passing the channel to hangup
 
 0.05	Added new AGI example: calleridnamelookup.agi
 	Added new module Asterisk::QCall
