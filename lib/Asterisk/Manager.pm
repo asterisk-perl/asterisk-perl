@@ -4,6 +4,7 @@ require 5.004;
 
 use Asterisk;
 use IO::Socket;
+use Digest::MD5;
 
 use strict;
 use warnings;
@@ -172,6 +173,7 @@ sub connect {
 	my $port = $self->port;
 	my $user = $self->user;
 	my $secret = $self->secret;
+	my %resp;
 
 	my $conn = new IO::Socket::INET( Proto => 'tcp',
 					 PeerAddr => $host,
@@ -196,10 +198,30 @@ sub connect {
 	$self->{_PROTOVERS} = $version;
 	$self->connfd($conn);
 
-	my %resp = $self->sendcommand(  Action => 'Login',
-					Username => $user,
-					Secret => $secret
-				     );
+	# check if the remote host supports MD5 Challenge authentication
+	my %authresp = $self->sendcommand( Action => 'Challenge',
+					   AuthType => 'MD5'
+					 );
+
+	if (($authresp{Response} eq 'Success')) {
+		# do md5 login
+		my $md5 = new Digest::MD5;
+		$md5->add($authresp{Challenge});
+		$md5->add($secret);
+		my $digest = $md5->hexdigest;
+		%resp = $self->sendcommand(  Action => 'Login',
+					     AuthType => 'MD5',
+					     Username => $user,
+					     Key => $digest
+					  );
+	} else {
+		# do plain text login
+		%resp = $self->sendcommand(  Action => 'Login',
+					     Username => $user,
+					     Secret => $secret
+					  );
+
+	}
 
 	if ( ($resp{Response} ne 'Success') && ($resp{Message} ne 'Authentication accepted') ) {
 		$self->error("Authentication failed for user $user\n");

@@ -1,3 +1,5 @@
+	Added MD5 Challenge auth to Asterisk::Manager
+
 0.06	*Interim Beta Release*
 	Added new AGI example agi-enum.agi
 	Added new module Asterisk::Outgoing
