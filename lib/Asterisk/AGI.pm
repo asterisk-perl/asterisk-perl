@@ -129,7 +129,6 @@ sub stream_file {
 }
 
 sub send_text {
-#SEND TEXT "text to send"\n
 	my ($self, $text) = @_;
 
 	return 0 if (!defined($text));
@@ -137,7 +136,6 @@ sub send_text {
 }
 
 sub send_image {
-#SEND IMAGE imagefilename\n
 	my ($self, $image) = @_;
 	return -1 if (!defined($image));
 
@@ -160,9 +158,6 @@ sub say_digits {
 
 	return -1 if (!defined($number));
 	return $self->execute("SAY DIGITS $number $digits");
-#        foreach $tempdig (split('', $digits)) {
-#                $self->say_number($tempdig);
-#        }
 }
 
 sub answer {
@@ -173,7 +168,6 @@ sub answer {
 
 sub get_data {
 	my ($self, $filename, $timeout, $maxdigits) = @_;
-#Needs to be tested to see if timeout and maxdigits are optional or what
 
 	return -1 if (!defined($filename));
 	return $self->execute("GET DATA $filename $timeout $maxdigits");
@@ -203,7 +197,7 @@ sub set_priority {
 sub receive_char {
 	my ($self, $timeout) = @_;
 
-#wait forever if timeout is not set
+#wait forever if timeout is not set. is this the prefered default?
 	$timeout = 0 if (!defined($timeout));
 	return $self->execute("RECEIVE CHAR $timeout");
 }
@@ -217,7 +211,6 @@ sub tdd_mode {
 
 
 sub wait_for_digit {
-#WAIT FOR DIGIT timeout
 	my ($self, $timeout) = @_;
 
 	$timeout = -1 if (!defined($timeout));

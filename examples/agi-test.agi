@@ -27,7 +27,7 @@ score($AGI->say_number('192837465'));
 print STDERR "5.  Testing 'waitdtmf'...";
 score($AGI->wait_for_digit(1000));
 print STDERR "6.  Testing 'record'...";
-#score($AGI->record_file('testagi', 'gsm', 1234, 300));
+score($AGI->record_file('testagi', 'gsm', 1234, 300));
 print STDERR "6a.  Testing 'record' playback...";
 score($AGI->stream_file('testagi'));
 print STDERR "7.. Testing 'exec Dial,IAX/asterisk@demo'...";
