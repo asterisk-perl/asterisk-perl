@@ -11,32 +11,32 @@ use Asterisk::Manager;
 
 $|++;
 
-my $astmon = new Asterisk::Manager;
+my $astman = new Asterisk::Manager;
 
-$astmon->user('test');
-$astmon->secret('test');
-$astmon->host('localhost');
+$astman->user('test');
+$astman->secret('test');
+$astman->host('duff');
 
-$astmon->connect || die "Could not connect to " . $astmon->host() . "!\n";
+$astman->connect || die $astman->error . "\n";
 
-$astmon->setcallback('Hangup', \&hangup_callback);
-$astmon->setcallback('DEFAULT', \&default_callback);
+$astman->setcallback('Hangup', \&hangup_callback);
+$astman->setcallback('DEFAULT', \&default_callback);
 
 
-#print STDERR $astmon->command('zap show channels');
+#print STDERR $astman->command('zap show channels');
 
-print STDERR $astmon->sendcommand( Action => 'IAXPeers');
+print STDERR $astman->sendcommand( Action => 'IAXPeers');
 
-#print STDERR $astmon->sendcommand( Action => 'Originate',
+#print STDERR $astman->sendcommand( Action => 'Originate',
 #					Channel => 'Zap/7',
 #					Exten => '500',
 #					Context => 'default',
 #					Priority => '1' );
 
 
-$astmon->eventloop;
+$astman->eventloop;
 
-$astmon->disconnect;
+$astman->disconnect;
 
 sub hangup_callback {
 	print STDERR "hangup callback\n";
