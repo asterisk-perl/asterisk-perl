@@ -1,3 +1,6 @@
+0.03	Added callback + setcallback function to detect hangups
+	Added channel_status function
+
 0.02	Added examples/agi-sayani.agi
 	Added the beginning of Asterisk::Voicemail
 

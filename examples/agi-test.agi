@@ -14,6 +14,9 @@ my $tests = 0;
 my $pass = 0;
 my $fail = 0;
 
+#setup callback
+$AGI->setcallback(\&mycallback);
+
 
 print STDERR "AGI Environment Dump:\n";
 foreach $i (sort keys %input) {
@@ -54,3 +57,10 @@ sub score {
 	}
 
 }
+
+sub mycallback {
+        my ($returncode) = @_;
+        print STDERR "MYCALLBACK: User Hungup ($returncode)\n";
+        exit($returncode);
+}
+
