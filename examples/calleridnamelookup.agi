@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 #
 # Use Reverse Number Database on the net to correct callerid info
+# Currently only trys to query anywho.com, but other lookups can be added
 #
 # Written by: James Golovich <james@gnuinter.net>
 #
@@ -15,9 +16,6 @@ $AGI = new Asterisk::AGI;
 my %input = $AGI->ReadParse();
 
 my $callerid = $input{'callerid'};
-#$callerid = '(734) 285-6435';
-$callerid = '(517) 540-9674';
-
 
 #Exit if there is already a name in callerid
 if ($callerid =~ /[A-Za-z]+/) {

@@ -12,7 +12,7 @@ $AGI = new Asterisk::AGI;
 
 my %input = $AGI->ReadParse();
 
-my $filename = '/tmp/testfile';
+my $filename = $ARGV[0];
 
 open(TEXT, "<$filename") || die "Cannot open $filename: $!\n";
 while ($string = <TEXT>) {
