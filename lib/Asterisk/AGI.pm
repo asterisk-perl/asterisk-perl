@@ -82,6 +82,10 @@ sub _execcommand {
 	my ($self, $command, $fh) = @_;
 
 	$fh = STDOUT if (!$fh);
+
+	select($fh);
+	$| = 1;
+
 	return -1 if (!defined($command));
 
 	return print $fh "$command\n";
