@@ -569,8 +569,6 @@ Example: $AGI->verbose("System Crashed\n", 1);
 
 Returns: Always returns 1
 
-=back 
-
 =cut
 
 
@@ -668,3 +666,5 @@ sub noop {
 1;
 
 __END__
+
+=back 
