@@ -1,4 +1,8 @@
-	Added new AGI example: calleridnamelookup.agi
+	Added new module Asterisk::Outgoing
+	Modified get_variable in Asterisk:AGI as suggested by 
+		Jean-Denis Girard <jd-girard@esoft.pf>
+
+0.05	Added new AGI example: calleridnamelookup.agi
 	Added new module Asterisk::QCall
 	Added new AGI command verbose
 

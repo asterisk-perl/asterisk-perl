@@ -136,9 +136,9 @@ sub _checkresult {
 	} elsif ($response =~ /\(noresponse\)/) {
 		$self->_status('noresponse');
 	} else {
-		print STDERR "Unexpected result '$response'\n" if ($DEBUG);
+		print STDERR "Unexpected result '$response'\n" if (defined($DEBUG) && $DEBUG);
 	}
-	print STDERR "_checkresult($response) = $result\n" if ($DEBUG>3);
+	print STDERR "_checkresult($response) = $result\n" if (defined($DEBUG) && $DEBUG>3);
 
 	return $result;				
 }
@@ -547,7 +547,7 @@ sub get_variable {
 
 	if ($self->execute("GET VARIABLE $variable")) {
 		my $tempresult = $self->_lastresponse();
-		if ($tempresult =~ /\((\w+)\)/) {
+		if ($tempresult =~ /\((.*)\)/) {
 			$result = $1;
 		}
 	}
