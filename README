@@ -1,0 +1,13 @@
+Asterisk Perl Modules
+by James Golovich <james@gnuinter.net>
+
+
+These are all modules for interfacing with the Asterisk open source pbx
+system.
+
+The main site for these files is http://asterisk.gnuinter.net, or soon
+to be found at a CPAN mirror near you.
+
+
+
+Asterisk can be found at http://www.asteriskpbx.com
