@@ -247,4 +247,16 @@ sub createdefaultmailbox {
 	return 1;
 }
 
+sub messages {
+	my ($self, $messages, $folder) = @_;
+
+        my $path = $self->spooldirectory() . '/' . $mailbox . '/' . $folder;
+        if (opendir(DIR, $path)) {
+                my @msgs = sort grep(/^msg....\.txt$/, readdir(DIR));
+                closedir(DIR);
+                return map { s/^msg(....)\.txt$/$1/; $_ } @msgs;
+        }
+        return ();
+}
+
 1;
