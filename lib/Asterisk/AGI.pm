@@ -659,6 +659,12 @@ sub database_deltree {
 	return $self->execute("DATABASE DELTREE $family $key");
 }
 
+sub noop {
+	my ($self) = @_;
+
+	return $self->execute("NOOP");
+}
+
 1;
 
 __END__
