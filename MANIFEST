@@ -1,0 +1,15 @@
+CHANGES
+README
+Makefile.PL
+lib/Asterisk.pm
+lib/Asterisk/AGI.pm
+lib/Asterisk/Outgoing.pm
+lib/Asterisk/QCall.pm
+lib/Asterisk/Voicemail.pm
+examples/agi-test.agi
+examples/agi-enum.agi
+examples/agi-sayani.agi
+examples/calleridnamelookup.agi
+examples/tts-bofh.agi
+examples/tts-line.agi
+examples/tts-ping.agi
