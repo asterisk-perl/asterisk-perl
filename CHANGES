@@ -1,3 +1,5 @@
+	Added passing channel as arg to AGI command CHANNEL STATUS
+
 0.07	Added new AGI command set_music
 	Bug fix from John Halleck <John.Halleck@utah.edu>
 	Added MD5 Challenge auth to Asterisk::Manager

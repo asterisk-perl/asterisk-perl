@@ -519,9 +519,9 @@ sub exec {
 }
 
 sub channel_status {
-	my ($self) = @_;
+	my ($self, $channel) = @_;
 
-	return $self->execute("CHANNEL STATUS");
+	return $self->execute("CHANNEL STATUS $channel");
 }
 
 =item $AGI->set_variable($variable, $value)
