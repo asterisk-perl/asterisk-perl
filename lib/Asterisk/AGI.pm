@@ -29,8 +29,6 @@ $AGI = new Asterisk::AGI;
 This module should make it easier to write scripts that interact with the
 asterisk open source pbx via AGI (asterisk gateway interface)
 
-=over 4
-
 =head1 AGI COMMANDS
 
 =cut
@@ -162,6 +160,8 @@ sub _lastresponse {
 		return $self->{'lastresponse'};
 	}
 }
+
+=over 4
 
 =item $AGI->stream_file($filename, $digits)
 
@@ -569,7 +569,10 @@ Example: $AGI->verbose("System Crashed\n", 1);
 
 Returns: Always returns 1
 
+=back 
+
 =cut
+
 
 sub verbose {
 	my ($self, $message, $level) = @_;
