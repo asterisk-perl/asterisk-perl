@@ -26,6 +26,6 @@ calleridnamelookup.agi: AGI Script that uses an online reverse number databases 
 tts-bofh.agi: AGI script that uses Festival to give a random bofh excuse
 tts-ping.agi: AGI script that pings an ip address and notifies the user if the host is up or down
 tts-line.agi: AGI script that uses Festival to read a text file one line at a time
-
+manager-test.pl: Example usage of the Asterisk::Manager module
 
 Asterisk can be found at http://www.asteriskpbx.com
