@@ -1,3 +1,6 @@
+#
+# $Id$
+#
 package Asterisk;
 
 require 5.004;
