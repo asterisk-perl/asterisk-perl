@@ -10,7 +10,7 @@ Asterisk::AGI - Simple Asterisk Gateway Interface Class
 
 use Asterisk::AGI;
 
-$AGI = new AGI;
+$AGI = new Asterisk::AGI;
 
 # pull AGI variables into %input
 
@@ -29,23 +29,12 @@ asterisk open source pbx via AGI (asterisk gateway interface)
 
 =cut
 
-use Asterisk;
-
-$VERSION = '0.01';
-
-$DEBUG = 0;
-
-sub version { $VERSION; }
-
 sub new {
 	my ($class, %args) = @_;
 	my $self = {};
 	bless $self, ref $class || $class;
-#        while (my ($key,$value) = each %args) { $self->set($key,$value); }
 	return $self;
 }
-
-sub DESTROY { }
 
 sub ReadParse {
 	my ($self, $fh) = @_;
@@ -53,6 +42,9 @@ sub ReadParse {
 	my %input = ();
 
 	$fh = STDIN if (!$fh);
+
+	select($fh);
+	$| = 1;
 	
 	while (<$fh>) {
 		chomp;
@@ -245,14 +237,12 @@ sub hangup {
 	return $self->execute("HANGUP");
 }
 
-sub dial_channel {
-	my ($self, $channel, $digits, $timeout) = @_;
-
-	return -1 if (!defined($channel));
-	$digits = '""' if (!defined($digits));
-	$timeout = 0 if (!defined($timeout));
-
-	return $self->execute("DIAL CHANNEL $channel $digits $timeout");
+sub exec {
+	my ($self, $app, $options) = @_;
+	return -1 if (!defined($app));
+	$options = '""' if (!defined($options));
+	return $self->execute("EXEC $app $options");
 }
+
 
 1;
