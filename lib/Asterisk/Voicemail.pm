@@ -18,6 +18,8 @@ description
 
 =cut
 
+use Asterisk;
+
 $VERSION = '0.01';
 
 $DEBUG = 5;

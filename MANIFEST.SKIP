@@ -1,8 +1,10 @@
 \bCVS\b
 ^Makefile$
 ^MANIFEST\.
+^MANIFEST
 ~$
 ^blib/
 ^pm_to_bib$
 \.old$
-
+.cvsignore
+asterisk-perl-.*

@@ -29,6 +29,8 @@ asterisk open source pbx via AGI (asterisk gateway interface)
 
 =cut
 
+use Asterisk;
+
 $VERSION = '0.01';
 
 $DEBUG = 0;

@@ -12,4 +12,19 @@ $astman->readconfig();
 
 print "PORT: " . $astman->port() . "\n";
 
-print Dumper $astman;
+
+$astman->user('test');
+$astman->secret('test');
+$astman->host('localhost');
+
+$astman->connect();
+$astman->authenticate();
+
+$astman->setevent( "testcb()");
+$astman->managerloop();
+#print Dumper $astman;
+
+sub testcb  {
+	my ($test) = @_;
+	print "TESTCALLBACK $test\n";
+}
