@@ -1,3 +1,5 @@
+	Added 2 new AGI + Festival examples: tts-bofh.agi and tts-line.agi
+
 0.03	Added callback + setcallback function to detect hangups
 	Added channel_status function
 

@@ -8,6 +8,10 @@ system.
 The main site for these files is http://asterisk.gnuinter.net, or soon
 to be found at a CPAN mirror near you.
 
+To install these modules just do:
+	perl Makefile.PL
+	make all
+	make install
 
 
 Asterisk can be found at http://www.asteriskpbx.com
