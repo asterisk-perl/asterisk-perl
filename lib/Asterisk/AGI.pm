@@ -47,6 +47,7 @@ sub new {
 	$self->{'lastresult'} = undef;
 	$self->{'hungup'} = 0;
 	$self->{'debug'} = 0;
+	$self->{'env'} = undef;
 	bless $self, ref $class || $class;
 	return $self;
 }
@@ -74,6 +75,7 @@ sub ReadParse {
 		}
 	}
 
+	$self->_env(%input);
 	return %input;
 }
 
@@ -104,6 +106,11 @@ sub callback {
 sub execute {
 	my ($self, $command) = @_;
 
+	# Check if ReadParse has been run already.  If not do it now
+	# to save end user confusion
+	if (!$self->_env) {
+		$self->ReadParse();
+	}
 	$self->_execcommand($command);
 	my $res = $self->_readresponse();
 	my $ret = $self->_checkresult($res);
@@ -154,9 +161,9 @@ sub _checkresult {
 	} elsif ($response =~ /\(noresponse\)/) {
 		$self->_status('noresponse');
 	} else {
-		print STDERR "Unexpected result '$response'\n" if ($self->_debug>0);
+		print STDERR "Unexpected result '" . defined($response) ? $response : '' . "'\n" if ($self->_debug>0);
 	}
-	print STDERR "_checkresult($response) = " . defined($result) ? $result : '' . "\n" if ($self->_debug>3);
+	print STDERR "_checkresult(" . defined($response) ? $response : '' . ") = " . defined($result) ? $result : '' . "\n" if ($self->_debug>3);
 
 	return $result;				
 }
@@ -208,6 +215,16 @@ sub _debug {
 		$self->{'debug'} = $value;
 	} else {
 		return $self->{'debug'};
+	}
+}
+
+sub _env {
+	my ($self, %env) = @_;
+
+	if (%env) {
+		$self->{'env'} = %env;
+	} else {
+		return $self->{'env'};
 	}
 }
 
@@ -451,12 +468,8 @@ sub get_option {
 
 	$timeout = 0 if (!defined($timeout)); 
 
-	my $ret = undef;
-
 	return -1 if (!defined($filename));
-	$ret = $self->execute("GET OPTION $filename $digits $timeout");
-
-	return $ret;
+	return $self->execute("GET OPTION $filename $digits $timeout");
 }
 
 =item $AGI->get_variable($variable)
@@ -568,13 +581,9 @@ Returns: Returns the string of text if received, or -1 for failure, error or han
 sub receive_text {
 	my ($self, $timeout) = @_;
 
-	my $ret = 0;
 #wait forever if timeout is not set. is this the prefered default?
 	$timeout = 0 if (!defined($timeout));
-	$ret = $self->execute("RECEIVE TEXT $timeout");
-
-	return $ret;
-
+	return $self->execute("RECEIVE TEXT $timeout");
 }
 
 =item $AGI->record_file($filename, $format, $digits, $timeout, $beep, $offset, $beep, $silence)
@@ -630,13 +639,10 @@ Returns: 0 if playback completes without a digit being pressed;
 sub say_alpha {
 	my ($self, $string, $digits) = @_;
 
-	my $ret = 0;
 	$digits = '""' if (!defined($digits));
 
 	return -1 if (!defined($string));
-	$ret = $self->execute("SAY ALPHA $string $digits");
-
-	return $ret;
+	return $self->execute("SAY ALPHA $string $digits");
 }
 
 =item $AGI->say_date($time [, $digits])
@@ -776,13 +782,10 @@ Returns: 0 if playback completes without a digit being pressed;
 sub say_phonetic {
         my ($self, $string, $digits) = @_;
 
-	my $ret = 0;
 	$digits = '""' if (!defined($digits));
 
 	return -1 if (!defined($string));
-	$ret = $self->execute("SAY PHONETIC $string $digits");
-
-	return $ret;
+	return $self->execute("SAY PHONETIC $string $digits");
 }
 
 =item $AGI->send_image($image)

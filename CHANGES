@@ -1,4 +1,5 @@
 	Add LICENSE file to source
+	Change AGI.pm so we run ReadParse if the user forgot to run it manually
 	Time to 'use strict' and 'use warnings' in AGI.pm (Hurray!)
 	Added 'SetVar' as available keyword in Outgoing.pm
 	Modified Asterisk::AGI set_variable to always quote the value
@@ -6,11 +7,12 @@
 	Updated calleridnamelookup.agi from Jeff Siddall <jeff at siddall.name>
 	Manager.pm update from Brian Evans <brian at indosoft.ca>
 	Patches from Peter Beckman <beckman at purplecow.com> (THANKS!!!)
-		Reorganize documentation for AGI.pm
+		Add documentation for missing functions in AGI.pm
 		Add control_stream_file to AGI.pm
 		Add get_full_variable to AGI.pm
 		Add get_option to AGI.pm
 		Add say_alpha/date/time/datetime/phonetic to AGI.pm
+		Change callback to be in central location rather than per function
 		
 0.08	Fixed Asterisk::AGI check_result regex so get_data works with '*'
 	Added passing channel as arg to AGI command CHANNEL STATUS

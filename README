@@ -32,4 +32,4 @@ tts-ping.agi: AGI script that pings an ip address and notifies the user if the h
 tts-line.agi: AGI script that uses Festival to read a text file one line at a time
 manager-test.pl: Example usage of the Asterisk::Manager module
 
-Asterisk can be found at http://www.asteriskpbx.com
+Asterisk can be found at http://www.asterisk.org

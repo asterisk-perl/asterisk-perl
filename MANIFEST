@@ -1,5 +1,6 @@
 CHANGES
 README
+LICENSE
 Makefile.PL
 lib/Asterisk.pm
 lib/Asterisk/AGI.pm
@@ -11,6 +12,7 @@ examples/agi-test.agi
 examples/agi-enum.agi
 examples/agi-sayani.agi
 examples/calleridnamelookup.agi
+examples/directory.agi
 examples/manager-test.pl
 examples/tts-bofh.agi
 examples/tts-line.agi
