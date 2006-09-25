@@ -285,7 +285,7 @@ sub sendcommand {
 	if ($want == 2) {
 		return @resp;
 	} else {
-		return map { split(': ', $_) } @resp;
+		return map { splitresult($_) } @resp;
 	}
 }
 
@@ -327,7 +327,7 @@ sub eventloop {
 sub handleevent {
 	my ($self) = @_;
 
-	my %resp = map { split(': ', $_); } $self->read_response;
+	my %resp = map { splitresult($_); } $self->read_response;
 	$self->eventcallback(%resp);
 
 	return %resp;
@@ -344,7 +344,7 @@ sub action {
 	my @resp = $self->read_response($conn);
 
 	if ($wanthash) {
-		return map { split(': ', $_) } @resp;
+		return map { splitresult($_) } @resp;
 	} elsif (wantarray) {
 		return @resp;
 	} else {
@@ -376,6 +376,17 @@ sub disconnect {
 	}
 
 	return 0;
+}
+
+sub splitresult {
+	my ($res) = @_;
+	my ($key, $val) = ('', '');
+
+	$res =~ /^([^:]+):\ {0,1}([^\ ].*)$/;
+	$key = $1 if ($1);
+	$val = $2 if ($2);
+
+	return ($key, $val);
 }
 
 1;

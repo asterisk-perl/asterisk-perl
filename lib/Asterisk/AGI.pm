@@ -2,8 +2,11 @@ package Asterisk::AGI;
 
 require 5.004;
 
+use strict;
+use warnings;
 use Asterisk;
 
+use vars qw(@ISA);
 @ISA = ( 'Asterisk' );
 
 =head1 NAME
@@ -29,7 +32,9 @@ $AGI = new Asterisk::AGI;
 This module should make it easier to write scripts that interact with the
 asterisk open source pbx via AGI (asterisk gateway interface)
 
-=head1 AGI COMMANDS
+=head1 MODULE COMMANDS
+
+=over 4
 
 =cut
 
@@ -39,6 +44,9 @@ sub new {
 	$self->{'callback'} = undef;
 	$self->{'status'} = undef;
 	$self->{'lastresponse'} = undef;
+	$self->{'lastresult'} = undef;
+	$self->{'hungup'} = 0;
+	$self->{'debug'} = 0;
 	bless $self, ref $class || $class;
 	return $self;
 }
@@ -59,15 +67,23 @@ sub ReadParse {
 	}
 	
 
-	if (defined($DEBUG)&&($DEBUG>0)) {
+	if ($self->_debug > 0) {
 		print STDERR "AGI Environment Dump:\n";
-		foreach $i (sort keys %input) {
+		foreach my $i (sort keys %input) {
 			print STDERR " -- $i = $input{$i}\n";
 		}
 	}
 
 	return %input;
 }
+
+=item $AGI->setcallback($funcref)
+
+Set function to execute when call is hungup or function returns error.
+
+Example: $AGI->setcallback(\&examplecallback);
+
+=cut 
 
 sub setcallback {
 	my ($self, $function) = @_;
@@ -90,8 +106,14 @@ sub execute {
 
 	$self->_execcommand($command);
 	my $res = $self->_readresponse();
+	my $ret = $self->_checkresult($res);
 
-	return $self->_checkresult($res);
+	if (defined($ret) && $ret eq '-1' && !$self->_hungup()) {
+		$self->_hungup(1);
+		$self->callback($ret);
+	}
+
+	return $ret;
 }
 
 sub _execcommand {
@@ -102,6 +124,8 @@ sub _execcommand {
 	select ((select ($fh), $| = 1)[0]);
 
 	return -1 if (!defined($command));
+
+	print STDERR "_execcommand: '$command'\n" if ($self->_debug>3);
 
 	return print $fh "$command\n";
 }
@@ -125,14 +149,14 @@ sub _checkresult {
 	$self->_lastresponse($response);
 	if ($response =~ /^200/) {
 		if ($response =~ /result=(-?[\d*#]+)/) {
-			$result = $1;
+			$result = $self->{'lastresult'} = $1;
 		}
 	} elsif ($response =~ /\(noresponse\)/) {
 		$self->_status('noresponse');
 	} else {
-		print STDERR "Unexpected result '$response'\n" if (defined($DEBUG) && $DEBUG);
+		print STDERR "Unexpected result '$response'\n" if ($self->_debug>0);
 	}
-	print STDERR "_checkresult($response) = $result\n" if (defined($DEBUG) && $DEBUG>3);
+	print STDERR "_checkresult($response) = " . defined($result) ? $result : '' . "\n" if ($self->_debug>3);
 
 	return $result;				
 }
@@ -157,60 +181,606 @@ sub _lastresponse {
 	}
 }
 
-=over 4
+sub _lastresult {
+	my ($self, $result) = @_;
 
-=item $AGI->stream_file($filename, $digits)
+	if (defined($result)) {
+		$self->{'lastresult'} = $result;
+	} else {
+		return $self->{'lastresult'};
+	}
+}
 
-Executes AGI Command "STREAM FILE $filename $digits"
+sub _hungup {
+	my ($self, $value) = @_;
 
-This command instructs Asterisk to play the given sound file and listen for the given dtmf digits. The
-fileextension must not be used in the filename because Asterisk will find the most appropriate file
-type.
+	if (defined($value)) {
+		$self->{'hungup'} = $value;
+	} else {
+		return $self->{'hungup'};
+	}
+}
 
-Example: $AGI->stream_file('demo-echotest', '0123');
+sub _debug {
+	my ($self, $value) = @_;
 
-Returns: -1 on error or hangup,
-0 if playback completes without a digit being pressed,
-or the ASCII numerical value of the digit if a digit was pressed
+	if (defined($value)) {
+		$self->{'debug'} = $value;
+	} else {
+		return $self->{'debug'};
+	}
+}
+
+=head1 AGI COMMANDS
+
+=item $AGI->answer()
+
+Executes AGI Command "ANSWER"
+
+Answers channel if not already in answer state
+
+Example: $AGI->answer();
+
+Returns: -1 on channel failure, or
+0 if successful
 
 =cut
 
-sub stream_file {
-	my ($self, $filename, $digits) = @_;
+sub answer {
+	my ($self) = @_;
 
-	my $ret = 0;
+	return $self->execute('ANSWER');
+}
 
-	$digits = '""' if (!defined($digits));
+=item $AGI->channel_status([$channel])
+
+Executes AGI Command "CHANNEL STATUS $channel"
+
+Returns the status of the specified channel.  If no channel name is given the
+returns the status of the current channel.
+
+Example: $AGI->channel_status();
+
+Returns: -1 Channel hungup or error
+         0 Channel is down and available
+         1 Channel is down, but reserved
+         2 Channel is off hook
+         3 Digits (or equivalent) have been dialed
+         4 Line is ringing
+         5 Remote end is ringing
+         6 Line is up
+         7 Line is busy
+
+=cut
+
+sub channel_status {
+	my ($self, $channel) = @_;
+
+	return $self->execute("CHANNEL STATUS $channel");
+}
+
+=item $AGI->control_stream_file($filename, $digits [, $skipms [, $ffchar [, $rewchar [, $pausechar]]]])
+
+Executes AGI Command "CONTROL STREAM FILE $filename $digits [$skipms [$ffchar [$rewchar [$pausechar]]]]"
+
+Send the given file, allowing playback to be controled by the given digits, if
+any. Use double quotes for the digits if you wish none to be permitted.
+Remember, the file extension must not be included in the filename.
+
+Note: ffchar and rewchar default to * and # respectively.
+
+Example: $AGI->control_stream_file('status', 'authorized');
+
+Returns: -1 on error or hangup;
+         0 if playback completes without a digit being pressed;
+         the ASCII numerical value of the digit of one was pressed.
+
+=cut
+
+sub control_stream_file {
+	my ($self, $filename, $digits, $skipms, $ffchar, $rewchar, $pausechar) = @_;
 
 	return -1 if (!defined($filename));
-	$ret =  $self->execute("STREAM FILE $filename $digits");
+	$digits = '""' if (!defined($digits));
+	return $self->execute("CONTROL STREAM FILE $filename $digits $skipms $ffchar $rewchar $pausechar");
+}
 
-	$self->callback($ret) if ($ret eq -1);
+=item $AGI->database_del($family, $key)
+
+Executes AGI Command "DATABASE DEL $family $key"
+
+Removes database entry <family>/<key>
+
+Example: $AGI->database_del('test', 'status');
+
+Returns: 1 on success, 0 otherwise
+
+=cut
+
+sub database_del {
+	my ($self, $family, $key) = @_;
+
+	return $self->execute("DATABASE DEL $family $key");
+}
+
+=item $AGI->database_deltree($family, $key)
+
+Executes AGI Command "DATABASE DELTREE $family $key"
+
+Deletes a family or specific keytree within a family in the Asterisk database
+
+Example: $AGI->database_deltree('test', 'status'); 
+Example: $AGI->database_deltree('test');
+
+Returns: 1 on success, 0 otherwise
+
+=cut
+
+sub database_deltree {
+	my ($self, $family, $key) = @_;
+
+	return $self->execute("DATABASE DELTREE $family $key");
+}
+
+=item $AGI->database_get($family, $key)
+
+Executes AGI Command "DATABASE GET $family $key"
+
+Example: $var = $AGI->database_get('test', 'status');
+
+Returns: The value of the variable, or undef if variable does not exist
+
+=cut
+
+sub database_get {
+	my ($self, $family, $key) = @_;
+
+	my $result = undef;
+
+	if ($self->execute("DATABASE GET $family $key")) {
+		my $tempresult = $self->_lastresponse();
+		if ($tempresult =~ /\((.*)\)/) {
+			$result = $1;
+		}
+	}
+	return $result;
+}
+
+=item $AGI->database_put($family, $key, $value)
+
+Executes AGI Command "DATABASE PUT $family $key $value"
+
+Set/modifes database entry <family>/<key> to <value>
+
+Example: $AGI->database_put('test', 'status', 'authorized');
+
+Returns: 1 on success, 0 otherwise
+
+=cut
+
+sub database_put {
+	my ($self, $family, $key, $value) = @_;
+
+	return $self->execute("DATABASE PUT $family $key $value");
+}
+
+=item $AGI->exec($app, $options)
+
+Executes AGI Command "EXEC $app $options"
+
+The most powerful AGI command.  Executes the given application passing the given options.
+
+Example: $AGI->exec('Dial', 'Zap/g2/8005551212');
+
+Returns: -2 on failure to find application, or
+whatever the given application returns
+
+=cut
+
+sub exec {
+	my ($self, $app, $options) = @_;
+	return -1 if (!defined($app));
+	$options = '""' if (!defined($options));
+	return $self->execute("EXEC $app $options");
+}
+
+=item $AGI->get_data($filename, $timeout, $maxdigits)
+
+Executes AGI Command "GET DATA $filename $timeout $maxdigits"
+
+Streams $filename and returns when $maxdigits have been received or
+when $timeout has been reached.  Timeout is specified in ms
+
+Example: $AGI->get_data('demo-welcome', 15000, 5);
+
+=cut
+
+sub get_data {
+	my ($self, $filename, $timeout, $maxdigits) = @_;
+
+	return -1 if (!defined($filename));
+	return $self->execute("GET DATA $filename $timeout $maxdigits");
+}
+
+=item $AGI->get_full_variable($variable [, $channel])
+
+Executes AGI Command "GET FULL VARIABLE $variablename $channel"
+
+Similar to get_variable, but additionally understands
+complex variable names and builtin variables.  If $channel is not set, uses the
+current channel.
+
+Example: $AGI->get_full_variable('status', 'SIP/4382');
+
+Returns: The value of the variable, or undef if variable does not exist
+
+=cut
+
+sub get_full_variable {
+	my ($self, $variable, $channel) = @_;
+
+	$channel = '' if (!defined($channel));
+
+	my $result = undef;
+
+	if ($self->execute("GET FULL VARIABLE $variable $channel")) {
+		my $tempresult = $self->_lastresponse();
+		if ($tempresult =~ /\((.*)\)/) {
+			$result = $1;
+		}
+	}
+	return $result;
+}
+
+=item $AGI->get_option($filename, $digits [, $timeout])
+
+Executes AGI Command "GET OPTION $filename $digits $timeout"
+
+Behaves similar to STREAM FILE but used with a timeout option.
+
+Streams $filename and returns when $digits is pressed or when $timeout has been
+reached.  Timeout is specified in ms.  If $timeout is not specified, the command
+will only terminate on the $digits set.
+
+Example: $AGI->get_option('demo-welcome', '#', 15000);
+
+=cut
+
+sub get_option {
+	my ($self, $filename, $digits, $timeout) = @_;
+
+	$timeout = 0 if (!defined($timeout)); 
+
+	my $ret = undef;
+
+	return -1 if (!defined($filename));
+	$ret = $self->execute("GET OPTION $filename $digits $timeout");
 
 	return $ret;
 }
 
-=item $AGI->send_text($text)
+=item $AGI->get_variable($variable)
 
-Executes AGI Command "SEND TEXT "$text"
+Executes AGI Command "GET VARIABLE $variablename"
 
-Sends the given text on a channel.  Most channels do not support the transmission of text.
+Gets the channel variable <variablename>
 
-Example: $AGI->send_text('You've got mail!');
+Example: $AGI->get_variable('status');
 
-Returns: -1 on error or hangup,
-0 if the text was sent or if the channel does not support text transmission.
+Returns: The value of the variable, or undef if variable does not exist
 
 =cut
 
-sub send_text {
-	my ($self, $text) = @_;
+sub get_variable {
+	my ($self, $variable) = @_;
+
+	my $result = undef;
+
+	if ($self->execute("GET VARIABLE $variable")) {
+		my $tempresult = $self->_lastresponse();
+		if ($tempresult =~ /\((.*)\)/) {
+			$result = $1;
+		}
+	}
+	return $result;
+}
+
+=item $AGI->hangup($channel)
+
+Executes AGI Command "HANGUP $channel"
+
+Hangs up the passed $channel, or the current channel if $channel is not passed.
+It is left to the AGI script to exit properly, otherwise you could end up with zombies.
+
+Example: $AGI->hangup();
+
+Returns: Always returns 1
+
+=cut
+
+sub hangup {
+	my ($self, $channel) = @_;
+
+	if ($channel) {
+		return $self->execute("HANGUP $channel");
+	} else {
+		return $self->execute("HANGUP");
+	}
+}
+
+=item $AGI->noop()
+
+Executes AGI Command "NOOP"
+
+Does absolutely nothing except pop up a log message.  
+ Useful for outputting debugging information to the Asterisk console.
+
+Example: $AGI->noop("Test Message");
+
+Returns: -1 on hangup or error, 0 otherwise
+
+=cut
+
+sub noop {
+	my ($self) = @_;
+
+	return $self->execute("NOOP");
+}
+
+=item $AGI->receive_char($timeout)
+
+Executes AGI Command "RECEIVE CHAR $timeout"
+
+Receives a character of text on a channel. Specify timeout to be the maximum
+time to wait for input in milliseconds, or 0 for infinite. Most channels do not
+support the reception of text. 
+
+Example: $AGI->receive_char(3000);
+
+Returns: Returns the decimal value of the character if one
+is received, or 0 if the channel does not support text reception.  Returns -1
+only on error/hangup.
+
+=cut
+
+sub receive_char {
+	my ($self, $timeout) = @_;
+
+#wait forever if timeout is not set. is this the prefered default?
+	$timeout = 0 if (!defined($timeout));
+	return $self->execute("RECEIVE CHAR $timeout");
+}
+
+=item $AGI->receive_text($timeout)
+
+Executes AGI Command "RECEIVE TEXT $timeout"
+
+Receives a string of text on a channel. Specify timeout to be the maximum time
+to wait for input in milliseconds, or 0 for infinite. Most channels do not
+support the reception of text. 
+
+Example: $AGI->receive_text(3000);
+
+Returns: Returns the string of text if received, or -1 for failure, error or hangup.
+
+=cut
+
+sub receive_text {
+	my ($self, $timeout) = @_;
 
 	my $ret = 0;
+#wait forever if timeout is not set. is this the prefered default?
+	$timeout = 0 if (!defined($timeout));
+	$ret = $self->execute("RECEIVE TEXT $timeout");
 
-	return $ret if (!defined($text));
-	$ret = $self->execute("SEND TEXT \"$text\"");
-	$self->callback($ret) if ($ret eq -1);
+	return $ret;
+
+}
+
+=item $AGI->record_file($filename, $format, $digits, $timeout, $beep, $offset, $beep, $silence)
+
+Executes AGI Command "RECORD FILE $filename $format $digits $timeout [$offset [$beep [s=$silence]]]"
+
+Record to a file until $digits are received as dtmf.
+The $format will specify what kind of file will be recorded.
+The $timeout is the maximum record time in milliseconds, or -1 for no timeout.
+
+$offset samples is optional, and if provided will seek to the offset without
+exceeding the end of the file.
+
+$silence is the number of seconds of silence allowed before the function
+returns despite the lack of dtmf digits or reaching timeout.
+
+Example: $AGI->record_file('foo', 'wav', '#', '5000', '0', 1, '2');
+
+Returns: 1 on success, -1 on hangup or error.
+
+=cut
+
+sub record_file {
+	my ($self, $filename, $format, $digits, $timeout, $offset, $beep, $silence) = @_;
+
+	my $extra = '';
+
+	return -1 if (!defined($filename));
+	$digits = '""' if (!defined($digits));
+	$extra .= $offset if (defined($offset));
+	$extra .= ' ' . $beep if (defined($beep));
+	$extra .= ' s=' . $silence if (defined($silence));
+
+	return $self->execute("RECORD FILE $filename $format $digits $timeout $extra");
+}
+
+=item $AGI->say_alpha($string, $digits)
+
+Executes AGI Command "SAY ALPHA $string $digits"
+
+Say a given character string, returning early if any of the given DTMF $digits
+are received on the channel. 
+
+Returns 
+Example: $AGI->say_alpha('Joe Smith', '#');
+
+Returns: 0 if playback completes without a digit being pressed; 
+         the ASCII numerical value of the digit if one was pressed;
+         -1 on error/hangup.
+
+=cut
+
+sub say_alpha {
+	my ($self, $string, $digits) = @_;
+
+	my $ret = 0;
+	$digits = '""' if (!defined($digits));
+
+	return -1 if (!defined($string));
+	$ret = $self->execute("SAY ALPHA $string $digits");
+
+	return $ret;
+}
+
+=item $AGI->say_date($time [, $digits])
+
+=cut
+
+=item $AGI->say_time($time [, $digits])
+
+=cut
+
+=item $AGI->say_datetime($time [, $digits [, $format [, $timezone]]])
+
+Executes AGI Command "SAY DATE $number $digits"
+Executes AGI Command "SAY TIME $number $digits"
+Executes AGI Command "SAY DATETIME $number $digits $format $timezone"
+
+Say a given date or time, returning early if any of the optional DTMF $digits are
+received on the channel.  $time is number of seconds elapsed since 00:00:00 on
+January 1, 1970, Coordinated Universal Time (UTC), commonly known as
+"unixtime." 
+
+For say_datetime, $format is the format the time should be said in; see
+voicemail.conf (defaults to "ABdY 'digits/at' IMp").  Acceptable values for
+$timezone can be found in /usr/share/zoneinfo.  Defaults to machine default.
+
+Example: $AGI->say_date('100000000');
+         $AGI->say_time('100000000', '#'); 
+         $AGI->say_datetime('100000000', '#', 'ABdY IMp', 'EDT');
+
+Returns: -1 on error or hangup;
+         0 if playback completes without a digit being pressed;
+         the ASCII numerical value of the digit of one was pressed.
+
+=cut
+
+sub say_datetime_all {
+	my ($self, $type, $time, $digits, $format, $timezone) = @_;
+
+	my $ret = 0;
+	$digits = '""' if (!defined($digits));
+	return -1 if (!defined($time));
+
+	if ($type == 'date') {
+		$ret = $self->execute("SAY DATE $time $digits");
+	} elsif ($type == 'time') {
+		$ret = $self->execute("SAY TIME $time $digits");
+	} elsif ($type == 'datetime') {
+		$ret = $self->execute("SAY DATETIME $time $digits $format $timezone");
+	} else {
+		$ret = -1;
+	}
+
+	return $ret;
+}
+
+sub say_date {
+	my ($self, $time, $digits) = @_;
+
+	return $self->say_datetime_all('date', $time, $digits);
+}
+
+sub say_time {
+	my ($self, $time, $digits) = @_;
+
+	return $self->say_datetime_all('time', $time, $digits);
+}
+
+sub say_datetime {
+	my ($self, $time, $digits, $format, $timezone) = @_;
+
+	return $self->say_datetime_all('datetime', $time, $digits, $format, $timezone);
+}
+
+=item $AGI->say_digits($number, $digits)
+
+Executes AGI Command "SAY DIGITS $number $digits"
+
+Says the given digit string $number, returning early if any of the $digits are received.
+
+Example: $AGI->say_digits('8675309');
+
+Returns: -1 on error or hangup,
+0 if playback completes without a digit being pressed, 
+or the ASCII numerical value of the digit of one was pressed.
+
+=cut
+
+sub say_digits {
+        my ($self, $number, $digits) = @_;
+
+	$digits = '""' if (!defined($digits));
+
+	return -1 if (!defined($number));
+	$number =~ s/\D//g;
+	return $self->execute("SAY DIGITS $number $digits");
+}
+
+=item $AGI->say_number($number, $digits)
+
+Executes AGI Command "SAY NUMBER $number $digits"
+
+Says the given $number, returning early if any of the $digits are received.
+
+Example: $AGI->say_number('98765');
+
+Returns: -1 on error or hangup,
+0 if playback completes without a digit being pressed, 
+or the ASCII numerical value of the digit of one was pressed.
+
+=cut
+
+sub say_number {
+	my ($self, $number, $digits) = @_;
+
+	$digits = '""' if (!defined($digits));
+
+	return -1 if (!defined($number));
+	$number =~ s/\D//g;
+	return $self->execute("SAY NUMBER $number $digits");
+}
+
+=item $AGI->say_phonetic($string, $digits)
+
+Executes AGI Command "SAY PHONETIC $string $digits"
+
+Say a given character string with phonetics, returning early if any of the
+given DTMF digits are received on the channel.
+
+Example: $AGI->say_phonetic('Joe Smith', '#');
+
+Returns: 0 if playback completes without a digit being pressed; 
+         the ASCII numerical value of the digit if one was pressed;
+         -1 on error/hangup.
+
+=cut
+
+sub say_phonetic {
+        my ($self, $string, $digits) = @_;
+
+	my $ret = 0;
+	$digits = '""' if (!defined($digits));
+
+	return -1 if (!defined($string));
+	$ret = $self->execute("SAY PHONETIC $string $digits");
 
 	return $ret;
 }
@@ -231,118 +801,50 @@ Returns: -1 on error or hangup,
 sub send_image {
 	my ($self, $image) = @_;
 
-	my $ret = 0;
 	return -1 if (!defined($image));
 
-	$ret = $self->execute("SEND IMAGE $image");
-	$self->callback($ret) if ($ret eq -1);
-
-	return $ret;
+	return $self->execute("SEND IMAGE $image");
 }
 
-=item $AGI->say_number($number, $digits)
+=item $AGI->send_text($text)
 
-Executes AGI Command "SAY NUMBER $number $digits"
+Executes AGI Command "SEND TEXT "$text"
 
-Says the given $number, returning early if any of the $digits are received.
+Sends the given text on a channel.  Most channels do not support the transmission of text.
 
-Example: $AGI->say_number('98765');
+Example: $AGI->send_text('You've got mail!');
 
 Returns: -1 on error or hangup,
-0 if playback completes without a digit being pressed, 
-or the ASCII numerical value of the digit of one was pressed.
+0 if the text was sent or if the channel does not support text transmission.
 
 =cut
 
-sub say_number {
-	my ($self, $number, $digits) = @_;
+sub send_text {
+	my ($self, $text) = @_;
 
-	my $ret = 0;
-
-	$digits = '""' if (!defined($digits));
-
-	return -1 if (!defined($number));
-	$number =~ s/\D//g;
-	$ret = $self->execute("SAY NUMBER $number $digits");
-
-	$self->callback($ret) if ($ret eq -1);
-
-	return $ret;
+	return 0 if (!defined($text));
+	return $self->execute("SEND TEXT \"$text\"");
 }
 
-=item $AGI->say_digits($number, $digits)
+=item $AGI->set_autohangup($time)
 
-Executes AGI Command "SAY DIGITS $number $digits"
+Executes AGI Command "SET AUTOHANGUP $time"
 
-Says the given digit string $number, returning early if any of the $digits are received.
+Cause the channel to automatically hangup at <time> seconds in the future.
+Of course it can be hungup before then as well.
+Setting to 0 will cause the autohangup feature to be disabled on this channel.
 
-Example: $AGI->say_digits('8675309');
+Example: $AGI->set_autohangup(60);
 
-Returns: -1 on error or hangup,
-0 if playback completes without a digit being pressed, 
-or the ASCII numerical value of the digit of one was pressed.
-
-=cut
-
-sub say_digits {
-        my ($self, $number, $digits) = @_;
-
-	my $ret = 0;
-	$digits = '""' if (!defined($digits));
-
-	return -1 if (!defined($number));
-	$number =~ s/\D//g;
-	$ret = $self->execute("SAY DIGITS $number $digits");
-	$self->callback($ret) if ($ret eq -1);
-
-	return $ret;
-}
-
-=item $AGI->answer()
-
-Executes AGI Command "ANSWER"
-
-Answers channel if not already in answer state
-
-Example: $AGI->answer();
-
-Returns: -1 on channel failure, or
-0 if successful
+Returns: Always returns 1
 
 =cut
 
-sub answer {
-	my ($self) = @_;
+sub set_autohangup {
+	my ($self, $time) = @_;
 
-	my $ret = 0;
-	$ret = $self->execute('ANSWER');
-	$self->callback($ret) if ($ret eq -1);
-
-	return $ret;
-
-}
-
-=item $AGI->get_data($filename, $timeout, $maxdigits)
-
-Executes AGI Command "GET DATA $filename $timeout $maxdigits"
-
-Streams $filename and returns when $maxdigits have been received or
-when $timeout has been reached.  Timeout is specified in ms
-
-Example: $AGI->get_data('demo-welcome', 15000, 5);
-
-=cut
-
-sub get_data {
-	my ($self, $filename, $timeout, $maxdigits) = @_;
-
-	my $ret = undef;
-
-	return -1 if (!defined($filename));
-	$ret = $self->execute("GET DATA $filename $timeout $maxdigits");
-	$self->callback($ret) if ($ret eq -1);
-
-	return $ret;
+	$time = 0 if (!defined($time));
+	return $self->execute("SET AUTOHANGUP $time");
 }
 
 =item $AGI->set_callerid($number)
@@ -402,6 +904,26 @@ sub set_extension {
 	return $self->execute("SET EXTENSION $extension");
 }
 
+=item $AGI->set_music($mode [, $class])
+
+Executes AGI Command "SET MUSIC $mode $class"
+
+Enables/Disables the music on hold generator.  If $class is not specified, then
+the default music on hold class will be used.  $mode must be "on" or "off".
+
+Example: $AGI->set_music("on", "happy");
+         $AGI->set_music("off");
+
+Returns: -1 on hangup or error, 0 otherwise.
+
+=cut
+
+sub set_music {
+	my ($self, $mode, $class) = @_;
+
+	return $self->execute("SET MUSIC $mode $class");
+}
+
 =item $AGI->set_priority($priority)
 
 Executes AGI Command "SET PRIORITY $priority"
@@ -419,109 +941,6 @@ sub set_priority {
 
 	return -1 if (!defined($priority));
 	return $self->execute("SET PRIORITY $priority");
-}
-
-sub receive_char {
-	my ($self, $timeout) = @_;
-
-	my $ret = 0;
-#wait forever if timeout is not set. is this the prefered default?
-	$timeout = 0 if (!defined($timeout));
-	$ret = $self->execute("RECEIVE CHAR $timeout");
-	$self->callback($ret) if ($ret eq -1);
-
-	return $ret;
-
-}
-
-sub tdd_mode {
-	my ($self, $mode) = @_;
-
-	return 0 if (!defined($mode));
-	return $self->execute("TDD MODE $mode");
-}
-
-
-sub wait_for_digit {
-	my ($self, $timeout) = @_;
-
-	my $ret = 0;
-	$timeout = -1 if (!defined($timeout));
-	$ret = $self->execute("WAIT FOR DIGIT $timeout");
-
-	$self->callback($ret) if ($ret eq -1);
-
-	return $ret;
-}
-
-sub record_file {
-	my ($self, $filename, $format, $digits, $timeout, $beep) = @_;
-
-	my $ret = 0;
-
-	return -1 if (!defined($filename));
-	$digits = '""' if (!defined($digits));
-	$ret = $self->execute("RECORD FILE $filename $format $digits $timeout");
-
-	$self->callback($ret) if ($ret eq -1);
-
-	return $ret;
-}
-
-sub set_autohangup {
-	my ($self, $time) = @_;
-
-	$time = 0 if (!defined($time));
-	return $self->execute("SET AUTOHANGUP $time");
-}
-
-=item $AGI->hangup($channel)
-
-Executes AGI Command "HANGUP $channel"
-
-Hangs up the passed $channel, or the current channel if $channel is not passed.
-It is left to the AGI script to exit properly, otherwise you could end up with zombies.
-
-Example: $AGI->hangup();
-
-Returns: Always returns 1
-
-=cut
-
-sub hangup {
-	my ($self, $channel) = @_;
-
-	if ($channel) {
-		return $self->execute("HANGUP $channel");
-	} else {
-		return $self->execute("HANGUP");
-	}
-}
-
-=item $AGI->exec($app, $options)
-
-Executes AGI Command "EXEC $app $options"
-
-The most powerful AGI command.  Executes the given application passing the given options.
-
-Example: $AGI->exec('Dial', 'Zap/g2/8005551212');
-
-Returns: -2 on failure to find application, or
-whatever the given application returns
-
-=cut
-
-sub exec {
-	my ($self, $app, $options) = @_;
-	return -1 if (!defined($app));
-	$options = '""' if (!defined($options));
-	return $self->execute("EXEC $app $options");
-}
-
-sub channel_status {
-	my ($self, $channel) = @_;
-
-	return $self->execute("CHANNEL STATUS $channel");
 }
 
 =item $AGI->set_variable($variable, $value)
@@ -542,30 +961,48 @@ sub set_variable {
 	return $self->execute("SET VARIABLE $variable \"$value\"");
 }
 
-=item $AGI->get_variable($variable)
+=item $AGI->stream_file($filename, $digits)
 
-Executes AGI Command "GET VARIABLE $variablename"
+Executes AGI Command "STREAM FILE $filename $digits"
 
-Gets the channel variable <variablename>
+This command instructs Asterisk to play the given sound file and listen for the given dtmf digits. The
+fileextension must not be used in the filename because Asterisk will find the most appropriate file
+type.
 
-Example: $AGI->get_variable('status');
+Example: $AGI->stream_file('demo-echotest', '0123');
 
-Returns: The value of the variable, or undef if variable does not exist
+Returns: -1 on error or hangup,
+0 if playback completes without a digit being pressed,
+or the ASCII numerical value of the digit if a digit was pressed
 
 =cut
 
-sub get_variable {
-	my ($self, $variable) = @_;
+sub stream_file {
+	my ($self, $filename, $digits) = @_;
 
-	my $result = undef;
+	$digits = '""' if (!defined($digits));
 
-	if ($self->execute("GET VARIABLE $variable")) {
-		my $tempresult = $self->_lastresponse();
-		if ($tempresult =~ /\((.*)\)/) {
-			$result = $1;
-		}
-	}
-	return $result;
+	return -1 if (!defined($filename));
+	return $self->execute("STREAM FILE $filename $digits");
+}
+
+=item $AGI->tdd_mode($mode)
+
+Executes AGI Command "TDD MODE <on|off>"
+
+Enable/Disable TDD transmission/reception on a channel. 
+
+Example: $AGI->tdd_mode('on');
+
+Returns: Returns 1 if successful, or 0 if channel is not TDD-capable.
+
+=cut
+
+sub tdd_mode {
+	my ($self, $mode) = @_;
+
+	return 0 if (!defined($mode));
+	return $self->execute("TDD MODE $mode");
 }
 
 =item $AGI->verbose($message, $level)
@@ -580,102 +1017,32 @@ Returns: Always returns 1
 
 =cut
 
-
 sub verbose {
 	my ($self, $message, $level) = @_;
 
 	return $self->execute("VERBOSE \"$message\" $level");
 }
 
-=item $AGI->database_get($family, $key)
+=item $AGI->wait_for_digit($timeout)
 
-Executes AGI Command "DATABASE GET $family $key"
+Executes AGI Command "WAIT FOR DIGIT $timeout"
 
-Example: $var = $AGI->database_get('test', 'status');
+Waits up to 'timeout' milliseconds for channel to receive a DTMF digit.
 
-Returns: The value of the variable, or undef if variable does not exist
+Use -1 for the timeout value if you desire the call to block indefinitely.
 
-=cut
+Example: $AGI->wait_for_digit($timeout);
 
-sub database_get {
-	my ($self, $family, $key) = @_;
-
-	my $result = undef;
-
-	if ($self->execute("DATABASE GET $family $key")) {
-		my $tempresult = $self->_lastresponse();
-		if ($tempresult =~ /\((.*)\)/) {
-			$result = $1;
-		}
-	}
-	return $result;
-}
-
-=item $AGI->database_put($family, $key, $value)
-
-Executes AGI Command "DATABASE PUT $family $key $value"
-
-Set/modifes database entry <family>/<key> to <value>
-
-Example: $AGI->database_put('test', 'status', 'authorized');
-
-Returns: 1 on success, 0 otherwise
+Returns: Returns -1 on channel failure, 0 if no digit is received in the timeout, or
+ the numerical value of the ascii of the digit if one is received.
 
 =cut
 
-sub database_put {
-	my ($self, $family, $key, $value) = @_;
+sub wait_for_digit {
+	my ($self, $timeout) = @_;
 
-	return $self->execute("DATABASE PUT $family $key $value");
-}
-
-=item $AGI->database_del($family, $key)
-
-Executes AGI Command "DATABASE DEL $family $key"
-
-Removes database entry <family>/<key>
-
-Example: $AGI->database_del('test', 'status');
-
-Returns: 1 on success, 0 otherwise
-
-=cut
-
-sub database_del {
-	my ($self, $family, $key) = @_;
-
-	return $self->execute("DATABASE DEL $family $key");
-}
-
-=item $AGI->database_deltree($family, $key)
-
-Executes AGI Command "DATABASE DELTREE $family $key"
-
-Deletes a family or specific keytree within a family in the Asterisk database
-
-Example: $AGI->database_deltree('test', 'status'); 
-Example: $AGI->database_deltree('test');
-
-Returns: 1 on success, 0 otherwise
-
-=cut
-
-sub database_deltree {
-	my ($self, $family, $key) = @_;
-
-	return $self->execute("DATABASE DELTREE $family $key");
-}
-
-sub noop {
-	my ($self) = @_;
-
-	return $self->execute("NOOP");
-}
-
-sub set_music {
-	my ($self, $mode, $class) = @_;
-
-	return $self->execute("SET MUSIC $mode $class");
+	$timeout = -1 if (!defined($timeout));
+	return $self->execute("WAIT FOR DIGIT $timeout");
 }
 
 1;

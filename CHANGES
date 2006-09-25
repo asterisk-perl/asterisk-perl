@@ -1,6 +1,17 @@
+	Add LICENSE file to source
+	Time to 'use strict' and 'use warnings' in AGI.pm (Hurray!)
 	Added 'SetVar' as available keyword in Outgoing.pm
 	Modified Asterisk::AGI set_variable to always quote the value
-
+	Add directory.agi example from C. de Souza <m.list at yahoo.de>
+	Updated calleridnamelookup.agi from Jeff Siddall <jeff at siddall.name>
+	Manager.pm update from Brian Evans <brian at indosoft.ca>
+	Patches from Peter Beckman <beckman at purplecow.com> (THANKS!!!)
+		Reorganize documentation for AGI.pm
+		Add control_stream_file to AGI.pm
+		Add get_full_variable to AGI.pm
+		Add get_option to AGI.pm
+		Add say_alpha/date/time/datetime/phonetic to AGI.pm
+		
 0.08	Fixed Asterisk::AGI check_result regex so get_data works with '*'
 	Added passing channel as arg to AGI command CHANNEL STATUS
 

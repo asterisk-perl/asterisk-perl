@@ -1,7 +1,8 @@
 #!/usr/bin/perl
 #
 # Use Reverse Number Database on the net to add name to callerid info
-# Currently only trys to query anywho.com, but other lookups can be added easily
+# Currently only trys to query 411.com and anywho.com, but other lookups can
+# be added easily
 #
 # If your callerid is only passed as a 7 digit number, 
 # you can pass this script an argument with the default area code
@@ -11,29 +12,37 @@
 # exten => s,2,Dial,Zap,1
 #
 # Written by: James Golovich <james@gnuinter.net>
+# Updated by: Jeff Siddall <jeff@siddall.name>
 #
 
 use Asterisk::AGI;
 use LWP::UserAgent;
 
-#SET $CACHELOOKUPS to 1 to cachelookups locally, default is disabled
-$CACHELOOKUPS = 0;
+#SET $CACHELOOKUPS to 1 to cachelookups locally, default is enabled
+$CACHELOOKUPS = 1;
 #You must create this directory if you enable $CACHELOOKUPS, or caching will fail
-$CACHEDIR = '/tmp/calleridlookups';
+$CACHEDIR = '/var/spool/asterisk/calleridlookups';
 
 #TIMEOUT is maximum number of seconds for http requests (we don't want to take too long)
-$TIMEOUT = 2;
+$TIMEOUT = 3;
 
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 $AGI = new Asterisk::AGI;
 
 my %input = $AGI->ReadParse();
 
 my $callerid = $input{'callerid'};
+my $calleridname = $input{'calleridname'};
 
-#Exit quickly if there is already a name in callerid or if the callerid field is empty
-if (!$callerid || $callerid =~ /[A-Za-z]+/) {
+#Exit quickly unless the callerid number is the right length and the calleridname is empty or contains the word private or unknown
+# Skip the name lookup if the caller ID number is not 7, 10, or 11 digits long
+if (!(($callerid =~ /\d{7}/) || ($callerid =~ /\d{10}/) || ($callerid =~ /\d{11}/))) {
+	$AGI->exec('Set', "CALLERID(name)=\"Invalid Number\"");
+	exit(0);
+}
+# Skip the name lookup if the caller ID name is not unknown or private (ie: it is already valid)
+elsif (!(($calleridname =~ /private/i) || ($calleridname =~ /unknown/i) || (!$calleridname))) {
 	exit(0);
 }
 
@@ -42,7 +51,7 @@ $defaultnpa = $ARGV[0] if (defined($ARGV[0]));
 #remove everything non numeric from callerid string
 $callerid =~ s/[^\d]//g;
 
-if ($callerid =~ /^(\d{3})(\d{3})(\d{4})$/) {
+if (($callerid =~ /^(\d{3})(\d{3})(\d{4})$/) || ($callerid =~ /^1(\d{3})(\d{3})(\d{4})$/)) {
 	$npa = $1;
 	$nxx = $2;
 	$station = $3;
@@ -55,8 +64,8 @@ if ($callerid =~ /^(\d{3})(\d{3})(\d{4})$/) {
 }
 
 if ($name = lookup($npa, $nxx, $station)) {
-	$newcallerid = "\"$name <($npa) $nxx-$station>\"";
-	$AGI->set_callerid($newcallerid);
+	# Only modify the calleridname portion (leave the number unchanged)
+	$AGI->exec('Set', "CALLERID(name)=\"$name\"");
 }
 
 exit(0);
@@ -68,13 +77,17 @@ sub lookup {
 		return $name;
 
 #Add other lookups here, always keep best db first in list
+#Use 411.com first since it looks up Canadian and US numbers, and will report the caller's area even if the number is unlisted
+	} elsif ($name = www411_lookup(@_)) {
+
 	} elsif ($name = anywho_lookup(@_)) {
 
 	}
 
-#we cache everything, even negative results
-	cacheadd($npa, $nxx, $station, $name);
-
+#Cache only successful lookups
+	if ($name != 'Name Server Error') {
+		cacheadd($npa, $nxx, $station, $name);
+        }
 	return $name;
 }
 
@@ -133,4 +146,55 @@ sub anywho_lookup {
 		}
 	}
 	return '';
+}
+
+sub www411_lookup {
+	my ($npa, $nxx, $station) = @_;
+
+	my $ua = LWP::UserAgent->new( timeout => $TIMEOUT);
+
+	my $URL = "http://www.411.com/search/Reverse_Phone?phone=$npa$nxx$station";
+
+	$ua->agent('AsteriskAGIQuery/$VERSION');
+
+	my $req = new HTTP::Request GET => $URL;
+	my $res = $ua->request($req);
+
+	if ($res->is_success()) {
+		# If the page returns a name, this RE will grab it, with the first name in $1 and the second in $2
+		if ($res->content =~ /<span style=\"line-height:18pt\;\"><strong>\s*(.*?)\s*&\#160\;\s*(.*?)\s*<\/strong><br><\/span>/s) {
+			my $fname = $1;
+			my $lname = $2;
+			my $name;
+
+			# Check if there is a first and a last name.  If so separate with a space.  Otherwise, don't use a space or the formatting could be wrong.
+			if (length($fname) && length($lname)) {
+				$name = "$fname $lname";
+			}
+			else {
+				$name = "$fname$lname";
+			}
+
+			# If the name has an '&' character, parse the HTML out
+			$name =~ s/&amp\;/&/;
+			return($name);
+		}
+
+		# The result may be an unlisted number, but the calling area name is returned so show that
+		elsif ($res->content =~ /is based in\s*(.+?)\s*and the registered carrier/s) {
+			my $area = $1;
+			return("$area");
+		}
+
+		# Otherwise the number is invalid, so just say that there is no listing
+		elsif ($res->content =~ /Please verify/s) {
+		return('No Listing');
+		}
+
+		# Otherwise just say "Name Lookup Failed"
+		else {
+			return('Name Lookup Failed');
+		}
+	}
+	return 'Name Server Error';
 }
