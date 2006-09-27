@@ -28,11 +28,14 @@ $out->create_outgoing;
 
 require 5.004;
 
+use strict;
+use warnings;
 use Fcntl ':flock';
 use Asterisk;
+use vars qw(@ISA);
 @ISA = ('Asterisk');
 
-$VERSION = '0.01';
+my $VERSION = '0.02';
 
 sub new {
 	my ($class, %args) = @_;
@@ -40,6 +43,7 @@ sub new {
 	$self->{OUTDIR} = '/var/spool/asterisk/outgoing';
 	$self->{OUTTIME} = undef;
 	$self->{OUTVARS} = {};
+	$self->{CUSTOM_VARS} = ();
 	$self->{ALLOWEDVARS} = [ 'channel', 'maxretries', 'retrytime', 'waittime', 'context', 'extension', 'priority', 'application', 'data', 'callerid', 'setvar']; 
 	bless $self, ref $class || $class;
 	return $self;
@@ -72,7 +76,7 @@ sub checkvariable {
 
 	my $ret = 0;
 
-	foreach $allowed (@{$self->{ALLOWEDVARS}}) {
+	foreach my $allowed (@{$self->{ALLOWEDVARS}}) {
 		if ($allowed =~ /$var/i) {
 			$ret = 1;
 		}
@@ -84,7 +88,11 @@ sub setvariable {
 	my ($self, $var, $value) = @_;
 
 	if ($self->checkvariable($var)) {
-		$self->{OUTVARS}{$var} = $value;
+		if ($var =~ /setvar/i) {
+			push @{$self->{CUSTOM_VARS}},$value;
+		} else {
+			$self->{OUTVARS}{$var} = $value;
+		}
 	}
 }
 
@@ -100,6 +108,9 @@ sub create_outgoing {
 	utime($time, $time, $filename);
 	foreach my $var (keys %{$self->{OUTVARS}}) {
 		print OUTFILE "$var: " . $self->{OUTVARS}{$var} . "\n";
+	}
+	foreach my $var (@{$self->{CUSTOM_VARS}}) {
+		print OUTFILE 'SetVar: ' . $var . "\n";
 	}
 	flock(OUTFILE, LOCK_UN);
 	close(OUTFILE);
