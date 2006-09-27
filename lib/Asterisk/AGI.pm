@@ -55,6 +55,16 @@ sub new {
 sub ReadParse {
 	my ($self, $fh) = @_;
 
+	if (!$self->_env) {
+		return $self->_ReallyReadParse($fh);
+	}
+
+	return %{$self->_env};
+}
+
+sub _ReallyReadParse {
+	my ($self, $fh) = @_;
+
 	my %input = ();
 
 	$fh = \*STDIN if (!$fh);
@@ -222,7 +232,7 @@ sub _env {
 	my ($self, %env) = @_;
 
 	if (%env) {
-		$self->{'env'} = %env;
+		$self->{'env'} = \%env;
 	} else {
 		return $self->{'env'};
 	}
