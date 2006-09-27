@@ -1,5 +1,7 @@
-	Add LICENSE file to source
+0.09	Test release.  Will go to 1.0 shortly after testing
 	Change AGI.pm so we run ReadParse if the user forgot to run it manually
+	Add LICENSE file to source
+	Added 2 basic tests of AGI.pm so 'make test' does something
 	Time to 'use strict' and 'use warnings' in AGI.pm (Hurray!)
 	Added 'SetVar' as available keyword in Outgoing.pm
 	Modified Asterisk::AGI set_variable to always quote the value
@@ -13,6 +15,8 @@
 		Add get_option to AGI.pm
 		Add say_alpha/date/time/datetime/phonetic to AGI.pm
 		Change callback to be in central location rather than per function
+	Allow using multiple SetVar in Outgoing.pm from Dariusz Dwornikowski <d.dwornikowski at proadmin.com.pl>
+	Use 'use strict' and 'use warnings' in Outgoing.pm
 		
 0.08	Fixed Asterisk::AGI check_result regex so get_data works with '*'
 	Added passing channel as arg to AGI command CHANNEL STATUS
