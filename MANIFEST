@@ -17,3 +17,7 @@ examples/manager-test.pl
 examples/tts-bofh.agi
 examples/tts-line.agi
 examples/tts-ping.agi
+t/agi.goodresponse  
+t/agi.head  
+t/agi.t
+
