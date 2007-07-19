@@ -1,3 +1,5 @@
+	Fix behavior of noop in AGI.pm (Thanks Dmitry Ivanov for pointing this out)
+
 0.09	Test release.  Will go to 1.0 shortly after testing
 	Change AGI.pm so we run ReadParse if the user forgot to run it manually
 	Add LICENSE file to source

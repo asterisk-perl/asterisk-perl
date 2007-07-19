@@ -545,9 +545,9 @@ Returns: -1 on hangup or error, 0 otherwise
 =cut
 
 sub noop {
-	my ($self) = @_;
+	my ($self, $string) = @_;
 
-	return $self->execute("NOOP");
+	return $self->execute("NOOP $string");
 }
 
 =item $AGI->receive_char($timeout)
