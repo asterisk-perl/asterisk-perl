@@ -180,9 +180,9 @@ sub _checkresult {
 	} elsif ($response =~ /\(noresponse\)/) {
 		$self->_status('noresponse');
 	} else {
-		print STDERR "Unexpected result '" . defined($response) ? $response : '' . "'\n" if ($self->_debug>0);
+		print STDERR "Unexpected result '" . (defined($response) ? $response : '') . "'\n" if ($self->_debug>0);
 	}
-	print STDERR "_checkresult(" . defined($response) ? $response : '' . ") = " . defined($result) ? $result : '' . "\n" if ($self->_debug>3);
+	print STDERR "_checkresult(" . (defined($response) ? $response : '') . ") = " . (defined($result) ? $result : '') . "\n" if ($self->_debug>3);
 
 	return $result;				
 }

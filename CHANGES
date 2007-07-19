@@ -1,3 +1,4 @@
+	Fix operator precedence login in debugging output of AGI (Thanks Matt Reilly)
 	Adjust the way we handle ReadParse so it will work if the user handles those reads themself
 	Quote options that are passed to exec and export $VERSION in AGI (Thanks Peter Beckman)
 	Allow offset to be passed to stream_file in AGI (Thanks jfields via CPAN)
