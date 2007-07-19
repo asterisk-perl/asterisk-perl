@@ -118,11 +118,6 @@ sub callback {
 sub execute {
 	my ($self, $command) = @_;
 
-	# Check if ReadParse has been run already.  If not do it now
-	# to save end user confusion
-	if (!$self->_env) {
-		$self->ReadParse();
-	}
 	$self->_execcommand($command);
 	my $res = $self->_readresponse();
 	my $ret = $self->_checkresult($res);
@@ -154,9 +149,21 @@ sub _readresponse {
 
 	my $response = undef;
 	$fh = \*STDIN if (!$fh);
-	$response = <$fh> || return '200 result=-1 (noresponse)';
-	chomp($response);
-	return $response;
+	while ($response = <$fh>) {
+		chomp($response);
+		if (!defined($response)) {
+			return '200 result=-1 (noresponse)';
+		} elsif ($response =~ /^agi_(\w+)\:\s+(.*)$/) {
+			# I really hate duplicating code, but if anyone has a way to be backwards compatible and keep everyone happy please let me know!
+			if ($self->_debug > 0) {
+				print STDERR "AGI Environment Dump:\n" if (!$self->_env);
+				print STDERR " -- $1 = $2\n";
+			}
+			$self->_addenv($1, $2);
+		} else {
+			return($response);
+		}
+	}
 }
 
 sub _checkresult {
@@ -228,6 +235,12 @@ sub _debug {
 	} else {
 		return $self->{'debug'};
 	}
+}
+
+sub _addenv {
+	my ($self, $var, $value) = @_;
+
+	$self->{'env'}->{$var} = $value;
 }
 
 sub _env {
