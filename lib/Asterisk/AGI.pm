@@ -772,9 +772,9 @@ sub say_digits {
 	return $self->execute("SAY DIGITS $number $digits");
 }
 
-=item $AGI->say_number($number, $digits)
+=item $AGI->say_number($number, $digits, $gender)
 
-Executes AGI Command "SAY NUMBER $number $digits"
+Executes AGI Command "SAY NUMBER $number $digits [$gender]"
 
 Says the given $number, returning early if any of the $digits are received.
 
@@ -787,13 +787,13 @@ or the ASCII numerical value of the digit of one was pressed.
 =cut
 
 sub say_number {
-	my ($self, $number, $digits) = @_;
+	my ($self, $number, $digits, $gender) = @_;
 
 	$digits = '""' if (!defined($digits));
 
 	return -1 if (!defined($number));
 	$number =~ s/\D//g;
-	return $self->execute("SAY NUMBER $number $digits");
+	return $self->execute("SAY NUMBER $number $digits $gender");
 }
 
 =item $AGI->say_phonetic($string, $digits)
