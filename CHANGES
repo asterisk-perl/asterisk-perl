@@ -1,3 +1,4 @@
+	Quote options that are passed to exec and export $VERSION in AGI (Thanks Peter Beckman)
 	Allow offset to be passed to stream_file in AGI (Thanks jfields via CPAN)
 	Fix behavior of noop in AGI.pm (Thanks Dmitry Ivanov for pointing this out)
 

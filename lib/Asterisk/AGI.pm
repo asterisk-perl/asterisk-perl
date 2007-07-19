@@ -6,8 +6,10 @@ use strict;
 use warnings;
 use Asterisk;
 
-use vars qw(@ISA);
+use vars qw(@ISA $VERSION);
 @ISA = ( 'Asterisk' );
+
+$VERSION = $Asterisk::VERSION;
 
 =head1 NAME
 
@@ -393,7 +395,7 @@ sub database_put {
 
 =item $AGI->exec($app, $options)
 
-Executes AGI Command "EXEC $app $options"
+Executes AGI Command "EXEC $app "$options""
 
 The most powerful AGI command.  Executes the given application passing the given options.
 
@@ -407,7 +409,14 @@ whatever the given application returns
 sub exec {
 	my ($self, $app, $options) = @_;
 	return -1 if (!defined($app));
-	$options = '""' if (!defined($options));
+	if (!defined($options)) {
+		$options = '""';
+	} elsif ($options =~ /^\".*\"$/) {
+		# Do nothing
+	} else {
+		$options = '"' . $options . '"';
+	}
+
 	return $self->execute("EXEC $app $options");
 }
 
