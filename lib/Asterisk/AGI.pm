@@ -974,9 +974,9 @@ sub set_variable {
 	return $self->execute("SET VARIABLE $variable \"$value\"");
 }
 
-=item $AGI->stream_file($filename, $digits)
+=item $AGI->stream_file($filename, $digits, $offset)
 
-Executes AGI Command "STREAM FILE $filename $digits"
+Executes AGI Command "STREAM FILE $filename $digits [$offset]"
 
 This command instructs Asterisk to play the given sound file and listen for the given dtmf digits. The
 fileextension must not be used in the filename because Asterisk will find the most appropriate file
@@ -991,12 +991,12 @@ or the ASCII numerical value of the digit if a digit was pressed
 =cut
 
 sub stream_file {
-	my ($self, $filename, $digits) = @_;
+	my ($self, $filename, $digits, $offset) = @_;
 
 	$digits = '""' if (!defined($digits));
 
 	return -1 if (!defined($filename));
-	return $self->execute("STREAM FILE $filename $digits");
+	return $self->execute("STREAM FILE $filename $digits $offset");
 }
 
 =item $AGI->tdd_mode($mode)
