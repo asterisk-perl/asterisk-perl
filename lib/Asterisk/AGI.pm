@@ -253,6 +253,20 @@ sub _env {
 	}
 }
 
+sub _recurse {
+	my ($self, $s2, $files, @args) = @_;
+
+	my $sub = (caller(1))[3];
+	my $ret = undef;
+
+	foreach my $fn (@$files) {
+		if (!$ret) {
+			$ret = $self->$sub($fn, @args);
+		}
+	}
+	return $ret;
+}
+
 =head1 AGI COMMANDS
 
 =item $AGI->answer()
@@ -489,19 +503,27 @@ Behaves similar to STREAM FILE but used with a timeout option.
 
 Streams $filename and returns when $digits is pressed or when $timeout has been
 reached.  Timeout is specified in ms.  If $timeout is not specified, the command
-will only terminate on the $digits set.
+will only terminate on the $digits set.  $filename can be an array of files
+or a single filename.
 
 Example: $AGI->get_option('demo-welcome', '#', 15000);
+	 $AGI->get_option(['demo-welcome', 'demo-echotest'], '#', 15000);
 
 =cut
 
 sub get_option {
 	my ($self, $filename, $digits, $timeout) = @_;
+	my $ret = undef;
 
 	$timeout = 0 if (!defined($timeout)); 
-
 	return -1 if (!defined($filename));
-	return $self->execute("GET OPTION $filename $digits $timeout");
+
+	if (ref($filename) eq "ARRAY") {
+		$ret = $self->_recurse(@_);
+	} else {
+		$ret = $self->execute("GET OPTION $filename $digits $timeout");
+	}
+	return $ret;
 }
 
 =item $AGI->get_variable($variable)
@@ -1002,9 +1024,10 @@ Executes AGI Command "STREAM FILE $filename $digits [$offset]"
 
 This command instructs Asterisk to play the given sound file and listen for the given dtmf digits. The
 fileextension must not be used in the filename because Asterisk will find the most appropriate file
-type.
+type.  $filename can be an array of files or a single filename.
 
 Example: $AGI->stream_file('demo-echotest', '0123');
+	 $AGI->stream_file(['demo-echotest', 'demo-welcome'], '0123');
 
 Returns: -1 on error or hangup,
 0 if playback completes without a digit being pressed,
@@ -1015,10 +1038,18 @@ or the ASCII numerical value of the digit if a digit was pressed
 sub stream_file {
 	my ($self, $filename, $digits, $offset) = @_;
 
+	my $ret = undef;
 	$digits = '""' if (!defined($digits));
 
 	return -1 if (!defined($filename));
-	return $self->execute("STREAM FILE $filename $digits $offset");
+
+	if (ref($filename) eq "ARRAY") {
+		$ret = $self->_recurse(@_);
+	} else {
+		$ret = $self->execute("STREAM FILE $filename $digits $offset");
+	}
+
+	return $ret;
 }
 
 =item $AGI->tdd_mode($mode)
