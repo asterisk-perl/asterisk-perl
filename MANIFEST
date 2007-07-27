@@ -1,6 +1,7 @@
 CHANGES
 README
 LICENSE
+MANIFEST
 Makefile.PL
 lib/Asterisk.pm
 lib/Asterisk/AGI.pm
@@ -21,3 +22,4 @@ t/agi.goodresponse
 t/agi.head  
 t/agi.t
 
+META.yml                                 Module meta-data (added by MakeMaker)
