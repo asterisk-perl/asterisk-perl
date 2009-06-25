@@ -148,6 +148,7 @@ sub _readresponse {
 	my ($self, $fh) = @_;
 
 	my $response = undef;
+	my $readvars = 0;
 	$fh = \*STDIN if (!$fh);
 	while ($response = <$fh>) {
 		chomp($response);
@@ -160,8 +161,13 @@ sub _readresponse {
 				print STDERR " -- $1 = $2\n";
 			}
 			$self->_addenv($1, $2);
-		} else {
+		} elsif ($readvars && $response eq '') {
+			print STDERR "Skipping blank response because we just read vars\n" if ($self->_debug > 0);
+			$readvars = 0;
+		} elsif ($response) {
 			return($response);
+		} else {
+			print STDERR "AGI Received unknown response: '$response'\n" if ($self->_debug > 0);
 		}
 	}
 }
@@ -739,11 +745,11 @@ sub say_datetime_all {
 	$digits = '""' if (!defined($digits));
 	return -1 if (!defined($time));
 
-	if ($type == 'date') {
+	if ($type eq 'date') {
 		$ret = $self->execute("SAY DATE $time $digits");
-	} elsif ($type == 'time') {
+	} elsif ($type eq 'time') {
 		$ret = $self->execute("SAY TIME $time $digits");
-	} elsif ($type == 'datetime') {
+	} elsif ($type eq 'datetime') {
 		$ret = $self->execute("SAY DATETIME $time $digits $format $timezone");
 	} else {
 		$ret = -1;
@@ -1086,6 +1092,7 @@ Returns: Always returns 1
 sub verbose {
 	my ($self, $message, $level) = @_;
 
+	$level = '' if (!$level);
 	return $self->execute("VERBOSE \"$message\" $level");
 }
 

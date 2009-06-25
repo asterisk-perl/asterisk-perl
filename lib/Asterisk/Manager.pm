@@ -264,11 +264,15 @@ sub astman_s2h {
 #$want = 1 returns the results in a large string
 #$want = 2 returns the results in an array
 sub sendcommand {
-	my ($self, %command, $want) = @_;
+	my ($self, @rest) = @_;
+	my (%command, $want)
 
-	if (!defined($want)) {
+	if (scalar(@rest) % 2) == 1) {
+		$want = pop @rest;
+	} else {
 		$want = 0;
 	}
+	%command = @rest;
 	
 	my $conn = $self->connfd || return;
 	my $cstring = $self->astman_h2s(%command);

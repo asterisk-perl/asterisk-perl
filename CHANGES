@@ -1,3 +1,8 @@
+1.0	Fix AGI readresponse so if ReadParse isn't manually run, the first command output will be returned
+	Fix AGI say_datetime_all so it works correctly (pointed out by Sergey Basmanov)
+	Fix Manager sendcommand problem.  Reported by numerous people but patch used from Tilghman Lesher
+	Fix warning from being printed if AGI verbose is used without level
+
 0.10	Seriously this is a test release, and if all is well next version will be 1.0.
 	Allow AGI commands get_option and stream_file to accept an array of files in addition to a single file (inspired by Michael Komitee)
 	Add gender paramater to AGI SAY NUMBER (only in asterisk trunk)
