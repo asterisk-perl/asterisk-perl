@@ -1,4 +1,6 @@
-1.0	Fix AGI readresponse so if ReadParse isn't manually run, the first command output will be returned
+1.01	Fix 2 typos in Asterisk::Manager (Thanks Denis Smirnov)
+
+1.00	Fix AGI readresponse so if ReadParse isn't manually run, the first command output will be returned
 	Fix AGI say_datetime_all so it works correctly (pointed out by Sergey Basmanov)
 	Fix Manager sendcommand problem.  Reported by numerous people but patch used from Tilghman Lesher
 	Fix warning from being printed if AGI verbose is used without level

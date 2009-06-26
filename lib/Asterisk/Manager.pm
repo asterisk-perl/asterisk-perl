@@ -265,9 +265,9 @@ sub astman_s2h {
 #$want = 2 returns the results in an array
 sub sendcommand {
 	my ($self, @rest) = @_;
-	my (%command, $want)
+	my (%command, $want);
 
-	if (scalar(@rest) % 2) == 1) {
+	if ((scalar(@rest) % 2) == 1) {
 		$want = pop @rest;
 	} else {
 		$want = 0;
