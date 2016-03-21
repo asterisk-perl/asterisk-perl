@@ -12,5 +12,15 @@ WriteMakefile (
 				COMPRESS => 'gzip -9f', SUFFIX => 'gz',
 				DIST_DEFAULT => 'tardist'
 			   },
+        META_MERGE => {
+            'meta_spec' => { version => 2},
+             resources => {
+                 repository => {
+                     type => 'git',
+                     url  =>  'https://github.com/asterisk-perl/asterisk-perl.git',
+                     web  =>  'https://github.com/asterisk-perl/asterisk-perl'
+                 },
+             },
+        },
 );
 
