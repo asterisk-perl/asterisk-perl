@@ -15,6 +15,8 @@ my $object = $module_name->new();
 
 isa_ok($object, $module_name);
 
-my @methods = qw();
+my @methods = qw( user secret host port connected error debug connfd
+read_response connect astman_h2s astman_s2h sendcommand setcallback eventcallback
+eventloop handleevent action command disconnect  splitresult );
 
 can_ok( $module_name, @methods);

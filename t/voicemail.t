@@ -15,6 +15,8 @@ my $object = $module_name->new();
 
 isa_ok($object, $module_name);
 
-my @methods = qw();
+my @methods = qw( spooldirectory sounddirectory serveremail format vmbox getfolders
+configfile readconfig appendsoundfile validmailbox msgcount msgcountstr
+createdefaultmailbox messages);
 
 can_ok( $module_name, @methods);

@@ -15,6 +15,6 @@ my $object = $module_name->new();
 
 isa_ok($object, $module_name);
 
-my @methods = qw();
+my @methods = qw(queuedir queuetime create_qcall  );
 
 can_ok( $module_name, @methods);
