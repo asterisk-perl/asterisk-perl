@@ -7,7 +7,7 @@ use lib 'lib';
 
 BEGIN { plan tests => 3}
 
-my $module_name = 'Asterisk::Manager';
+my $module_name = 'Asterisk::Extension';
 
 use_ok($module_name) or exit;
 
