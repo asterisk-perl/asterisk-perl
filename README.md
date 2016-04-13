@@ -1,4 +1,4 @@
-#Asterisk Perl Modules [![Build Status](https://travis-ci.org/itcharlie/asterisk-perl.svg?branch=master)](https://travis-ci.org/itcharlie/asterisk-perl)[![Coverage Status](https://coveralls.io/repos/github/itcharlie/asterisk-perl/badge.svg?branch=master)](https://coveralls.io/github/itcharlie/asterisk-perl?branch=master)
+#Asterisk Perl Modules [![Build Status](https://travis-ci.org/asterisk-perl/asterisk-perl.svg?branch=master)](https://travis-ci.org/asterisk-perl/asterisk-perl)[![Coverage Status](https://coveralls.io/repos/github/asterisk-perl/asterisk-perl/badge.svg?branch=master)](https://coveralls.io/github/asterisk-perl/asterisk-perl?branch=master)
 by James Golovich <james@gnuinter.net>
 
 
