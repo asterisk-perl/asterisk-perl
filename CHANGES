@@ -1,3 +1,8 @@
+1.04    Asterisk-Perl distribution now on Github.
+    Added simple test scripts
+	Travis and CoverAll integration with new Github repository
+	Asterisk-Perl distribution now ready for Pull Request Challenge (http://cpan-prc.org/)
+	
 1.03	Fix AGI.pm from printing warnings on some optional variables (http://bugs.debian.org/525025)
 
 1.02	Fix POD for AGI.pm thanks to Lawrence Gilbert
