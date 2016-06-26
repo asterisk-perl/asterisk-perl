@@ -1,3 +1,11 @@
+1.03	Fix AGI.pm from printing warnings on some optional variables (http://bugs.debian.org/525025)
+
+1.02	Fix POD for AGI.pm thanks to Lawrence Gilbert
+	Fix Manager.pm parsing values that were 0
+	Fix verbose example in AGI.pm
+	Fix return in _readparse in AGI.pm
+	Fix quoting on a few AGI.pm commands
+
 1.01	Fix 2 typos in Asterisk::Manager (Thanks Denis Smirnov)
 
 1.00	Fix AGI readresponse so if ReadParse isn't manually run, the first command output will be returned

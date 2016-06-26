@@ -7,7 +7,7 @@ require 5.004;
 
 use vars qw($VERSION);
 
-$VERSION = '1.01';
+$VERSION = '1.03';
 
 sub version { $VERSION; }
 

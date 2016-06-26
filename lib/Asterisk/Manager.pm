@@ -387,8 +387,8 @@ sub splitresult {
 	my ($key, $val) = ('', '');
 
 	$res =~ /^([^:]+):\ {0,1}([^\ ].*)$/;
-	$key = $1 if ($1);
-	$val = $2 if ($2);
+	$key = $1 if defined($1);
+	$val = $2 if defined($2);
 
 	return ($key, $val);
 }
