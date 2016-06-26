@@ -8,10 +8,6 @@ system.
 The main site for these files is http://asterisk.gnuinter.net, or soon
 to be found at a CPAN mirror near you.
 
-There is a mailing list setup to discuss asterisk-perl related topics,
-you can subscribe by sending an empty email to 
-asterisk-perl-subscribe@lists.gnuinter.net
-
 Some documentation is in the the perl modules, use perldoc to read it
 (example: perldoc Asterisk::AGI)
 
