@@ -161,8 +161,8 @@ sub _readresponse {
 				print STDERR " -- $1 = $2\n";
 			}
 			$self->_addenv($1, $2);
-		} elsif ($readvars && $response eq '') {
-			print STDERR "Skipping blank response because we just read vars\n" if ($self->_debug > 0);
+		} elsif (($readvars && ($response eq '')) || ($response eq 'HANGUP')) {
+			print STDERR "Skipping blank response or HANGUP because we just read vars\n" if ($self->_debug > 0);
 			$readvars = 0;
 		} elsif ($response) {
 			return($response);
@@ -170,6 +170,7 @@ sub _readresponse {
 			print STDERR "AGI Received unknown response: '$response'\n" if ($self->_debug > 0);
 		}
 	}
+	return '200 result=-1 (noresponse)';
 }
 
 sub _checkresult {
@@ -273,7 +274,11 @@ sub _recurse {
 	return $ret;
 }
 
+=back
+
 =head1 AGI COMMANDS
+
+=over 4
 
 =item $AGI->answer()
 
@@ -344,6 +349,11 @@ sub control_stream_file {
 
 	return -1 if (!defined($filename));
 	$digits = '""' if (!defined($digits));
+	$skipms = '' if (!defined($skipms));
+	$ffchar = '' if (!defined($ffchar));
+	$rewchar = '' if (!defined($rewchar));
+	$pausechar = '' if (!defined($pausechar));
+
 	return $self->execute("CONTROL STREAM FILE $filename $digits $skipms $ffchar $rewchar $pausechar");
 }
 
@@ -682,7 +692,7 @@ sub record_file {
 
 =item $AGI->say_alpha($string, $digits)
 
-Executes AGI Command "SAY ALPHA $string $digits"
+Executes AGI Command "SAY ALPHA "$string" $digits"
 
 Say a given character string, returning early if any of the given DTMF $digits
 are received on the channel. 
@@ -702,7 +712,7 @@ sub say_alpha {
 	$digits = '""' if (!defined($digits));
 
 	return -1 if (!defined($string));
-	return $self->execute("SAY ALPHA $string $digits");
+	return $self->execute("SAY ALPHA \"$string\" $digits");
 }
 
 =item $AGI->say_date($time [, $digits])
@@ -742,8 +752,10 @@ sub say_datetime_all {
 	my ($self, $type, $time, $digits, $format, $timezone) = @_;
 
 	my $ret = 0;
-	$digits = '""' if (!defined($digits));
 	return -1 if (!defined($time));
+	$digits = '""' if (!defined($digits));
+	$format = '' if (!defined($format));
+	$timezone = '' if (!defined($timezone));
 
 	if ($type eq 'date') {
 		$ret = $self->execute("SAY DATE $time $digits");
@@ -818,6 +830,7 @@ sub say_number {
 	my ($self, $number, $digits, $gender) = @_;
 
 	$digits = '""' if (!defined($digits));
+	$gender = '' if (!defined($gender));
 
 	return -1 if (!defined($number));
 	$number =~ s/\D//g;
@@ -826,7 +839,7 @@ sub say_number {
 
 =item $AGI->say_phonetic($string, $digits)
 
-Executes AGI Command "SAY PHONETIC $string $digits"
+Executes AGI Command "SAY PHONETIC "$string" $digits"
 
 Say a given character string with phonetics, returning early if any of the
 given DTMF digits are received on the channel.
@@ -845,7 +858,7 @@ sub say_phonetic {
 	$digits = '""' if (!defined($digits));
 
 	return -1 if (!defined($string));
-	return $self->execute("SAY PHONETIC $string $digits");
+	return $self->execute("SAY PHONETIC \"$string\" $digits");
 }
 
 =item $AGI->send_image($image)
@@ -984,6 +997,9 @@ Returns: -1 on hangup or error, 0 otherwise.
 sub set_music {
 	my ($self, $mode, $class) = @_;
 
+	$mode = '' if (!defined($mode));
+	$class = '' if (!defined($class));
+
 	return $self->execute("SET MUSIC $mode $class");
 }
 
@@ -1044,10 +1060,10 @@ or the ASCII numerical value of the digit if a digit was pressed
 sub stream_file {
 	my ($self, $filename, $digits, $offset) = @_;
 
+	return -1 if (!defined($filename));
 	my $ret = undef;
 	$digits = '""' if (!defined($digits));
-
-	return -1 if (!defined($filename));
+	$offset = '' if (!defined($offset));
 
 	if (ref($filename) eq "ARRAY") {
 		$ret = $self->_recurse(@_);
@@ -1083,7 +1099,7 @@ Executes AGI Command "VERBOSE $message $level"
 
 Logs $message with verboselevel $level
 
-Example: $AGI->verbose("System Crashed\n", 1);
+Example: $AGI->verbose("System Crashed", 1);
 
 Returns: Always returns 1
 

@@ -1,4 +1,4 @@
-Asterisk Perl Modules
+#Asterisk Perl Modules [![Build Status](https://travis-ci.org/asterisk-perl/asterisk-perl.svg?branch=master)](https://travis-ci.org/asterisk-perl/asterisk-perl)[![Coverage Status](https://coveralls.io/repos/github/asterisk-perl/asterisk-perl/badge.svg?branch=master)](https://coveralls.io/github/asterisk-perl/asterisk-perl?branch=master)
 by James Golovich <james@gnuinter.net>
 
 
@@ -7,10 +7,6 @@ system.
 
 The main site for these files is http://asterisk.gnuinter.net, or soon
 to be found at a CPAN mirror near you.
-
-There is a mailing list setup to discuss asterisk-perl related topics,
-you can subscribe by sending an empty email to 
-asterisk-perl-subscribe@lists.gnuinter.net
 
 Some documentation is in the the perl modules, use perldoc to read it
 (example: perldoc Asterisk::AGI)
