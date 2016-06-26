@@ -21,11 +21,17 @@ Examples that use these modules can be found in the examples/ directory
 Here is a short description of what each does:
 
 agi-sayani.agi: AGI Script that says the callerid and dnis
+
 agi-test.agi: Rewrite of AGI Example included with asterisk
+
 calleridnamelookup.agi: AGI Script that uses an online reverse number databases to add a name to callerid
+
 tts-bofh.agi: AGI script that uses Festival to give a random bofh excuse
+
 tts-ping.agi: AGI script that pings an ip address and notifies the user if the host is up or down
+
 tts-line.agi: AGI script that uses Festival to read a text file one line at a time
+
 manager-test.pl: Example usage of the Asterisk::Manager module
 
 Asterisk can be found at http://www.asterisk.org
