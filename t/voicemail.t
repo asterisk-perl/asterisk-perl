@@ -5,7 +5,7 @@ use Test::More;
 use lib '../lib';
 use lib 'lib';
 
-BEGIN { plan tests => 3}
+BEGIN { plan tests => 9}
 
 my $module_name = 'Asterisk::Voicemail';
 
@@ -20,3 +20,21 @@ configfile readconfig appendsoundfile validmailbox msgcount msgcountstr
 createdefaultmailbox messages);
 
 can_ok( $module_name, @methods);
+
+ok( $object->configfile() eq '/etc/asterisk/voicemail.conf', "Default vm conf file");
+
+$object->configfile('/tmp/etc/asterisk/voicemail.conf');
+
+ok( $object->configfile() eq '/tmp/etc/asterisk/voicemail.conf', "Custom vm conf file");
+
+ok( $object->spooldirectory eq '/var/spool/asterisk/vm' , "Default vm spool directory"); 
+
+$object->spooldirectory('/tmp/var/spool/asterisk/vm');
+
+ok( $object->spooldirectory eq '/tmp/var/spool/asterisk/vm', "Custom vm spool directory" );
+
+ok( $object->sounddirectory eq '/var/lib/asterisk/sounds' , "Default vm sound directory"); 
+
+$object->sounddirectory('/tmp//var/lib/asterisk/sounds');
+
+ok( $object->sounddirectory eq '/tmp//var/lib/asterisk/sounds', "Custom vm sound directory" );
