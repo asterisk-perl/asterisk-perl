@@ -5,7 +5,7 @@ use Test::More;
 use lib '../lib';
 use lib 'lib';
 
-BEGIN { plan tests => 9}
+
 
 my $module_name = 'Asterisk::Voicemail';
 
@@ -38,3 +38,11 @@ ok( $object->sounddirectory eq '/var/lib/asterisk/sounds' , "Default vm sound di
 $object->sounddirectory('/tmp//var/lib/asterisk/sounds');
 
 ok( $object->sounddirectory eq '/tmp//var/lib/asterisk/sounds', "Custom vm sound directory" );
+
+ok( ! $object->serveremail() , "Default serveremail value");
+
+$object->serveremail("test\@email.com");
+
+ok( $object->serveremail eq "test\@email.com", "Custom serveremail value");
+
+done_testing();
