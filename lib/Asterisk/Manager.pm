@@ -373,7 +373,7 @@ sub disconnect {
 	my %resp = $self->sendcommand('Action' => 'Logoff');
 
 
-	if ($resp{Response} eq 'Goodbye') {
+	if (defined ($resp{Response}) && $resp{Response} eq 'Goodbye') {
 		$self->{_CONNFD} = undef;
 		$self->connected(0);
 		return 1;
