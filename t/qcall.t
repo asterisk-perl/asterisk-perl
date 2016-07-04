@@ -5,6 +5,8 @@ use Test::More;
 use lib '../lib';
 use lib 'lib';
 
+BEGIN { plan tests => 5}
+
 my $module_name = 'Asterisk::QCall';
 
 use_ok($module_name) or exit;
@@ -20,4 +22,3 @@ can_ok( $module_name, @methods);
 ok( $object->queuedir() eq "/var/spool/asterisk/qcall" , "Default queuedir value");
 ok( $object->queuedir("/tmp/") eq "/tmp/", "Custom queuedir value");
 
-done_testing();

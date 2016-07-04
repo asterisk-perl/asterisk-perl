@@ -5,7 +5,7 @@ use Test::More;
 use lib '../lib';
 use lib 'lib';
 
-
+BEGIN { plan tests => 11}
 
 my $module_name = 'Asterisk::Voicemail';
 
@@ -45,4 +45,3 @@ $object->serveremail("test\@email.com");
 
 ok( $object->serveremail eq "test\@email.com", "Custom serveremail value");
 
-done_testing();

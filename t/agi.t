@@ -4,6 +4,7 @@ use Test::More;
 use lib '../lib';
 use lib 'lib';
 
+BEGIN { plan tests => 5}
 
 my $module_name = 'Asterisk::AGI';
 use_ok( $module_name) or exit;
@@ -29,9 +30,3 @@ ok(%vars);
 open($fh, "<t/agi.goodresponse") || die;
 my $response = $object->_readresponse($fh);
 ok($response);
-
-
-
-
-done_testing();
-

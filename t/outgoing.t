@@ -5,6 +5,8 @@ use Test::More;
 use lib '../lib';
 use lib 'lib';
 
+BEGIN { plan tests => 5}
+
 my $module_name = 'Asterisk::Outgoing';
 
 use_ok($module_name) or exit;
@@ -19,5 +21,3 @@ can_ok( $module_name, @methods);
 
 ok($object->outdir() eq "/var/spool/asterisk/outgoing", "Default outdir value");
 ok($object->outdir("/var/outgoing") eq "/var/outgoing", "Custom outdir value");
-
-done_testing();
