@@ -5,7 +5,7 @@ use Test::More;
 use lib '../lib';
 use lib 'lib';
 
-BEGIN { plan tests => 3}
+BEGIN { plan tests => 5}
 
 my $module_name = 'Asterisk::Outgoing';
 
@@ -18,3 +18,6 @@ isa_ok($object, $module_name);
 my @methods = qw(outdir outtime checkvariable setvariable create_outgoing);
 
 can_ok( $module_name, @methods);
+
+ok($object->outdir() eq "/var/spool/asterisk/outgoing", "Default outdir value");
+ok($object->outdir("/var/outgoing") eq "/var/outgoing", "Custom outdir value");

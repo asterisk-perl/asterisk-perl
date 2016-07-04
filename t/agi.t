@@ -4,14 +4,14 @@ use Test::More;
 use lib '../lib';
 use lib 'lib';
 
-BEGIN { plan tests => 5 }
+BEGIN { plan tests => 5}
 
 my $module_name = 'Asterisk::AGI';
 use_ok( $module_name) or exit;
 #use Asterisk::AGI;
 
-my $AGI = new $module_name;
-isa_ok( $AGI, $module_name);
+my $object = new $module_name;
+isa_ok( $object, $module_name);
 
 my @methods=qw( answer channel_status control_stream_file database_deltree
 database_get database_put exec  get_data get_full_variable get_variable
@@ -24,9 +24,9 @@ can_ok( $module_name, @methods );
 
 my $fh;
 open($fh, "<t/agi.head") || die;
-my %vars = $AGI->ReadParse($fh);
+my %vars = $object->ReadParse($fh);
 close($fh);
 ok(%vars);
 open($fh, "<t/agi.goodresponse") || die;
-my $response = $AGI->_readresponse($fh);
+my $response = $object->_readresponse($fh);
 ok($response);
