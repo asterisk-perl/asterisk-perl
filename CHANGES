@@ -1,5 +1,9 @@
+1.05	Fix Asterisk::Manager undefined response RT#115789 ( Thanks Chris Hemmerly)
+	Fix MakeFile.PL and Asterisk::Perl for Pause Indexing (Thanks Jim Keenan)
+	minor updates on the test scripts
+	
 1.04    Asterisk-Perl distribution now on Github.
-    Added simple test scripts
+	Added simple test scripts
 	Travis and CoverAll integration with new Github repository
 	Asterisk-Perl distribution now ready for Pull Request Challenge (http://cpan-prc.org/)
 	
