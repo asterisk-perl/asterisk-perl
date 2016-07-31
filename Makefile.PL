@@ -2,7 +2,7 @@ use ExtUtils::MakeMaker;
 my $mm_ver = ExtUtils::MakeMaker->VERSION;
 
 WriteMakefile (
-    NAME        => 'Asterisk::Perl',
+    NAME        => 'asterisk-perl',
     AUTHOR        => 'James Golovich <james@gnuinter.net>',
     VERSION_FROM    => 'lib/Asterisk.pm',
     ABSTRACT    => 'Asterisk Perl Interface',
