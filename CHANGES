@@ -1,3 +1,6 @@
+1.06    New upload with original asterisk-perl distro name
+    More test script updates to increase code coverage.
+	
 1.05	Fix Asterisk::Manager undefined response RT#115789 ( Thanks Chris Hemmerly)
 	Fix MakeFile.PL and Asterisk::Perl for Pause Indexing (Thanks Jim Keenan)
 	minor updates on the test scripts
