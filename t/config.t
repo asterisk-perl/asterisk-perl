@@ -5,7 +5,7 @@ use Test::More;
 use lib '../lib';
 use lib 'lib';
 
-BEGIN { plan tests => 3}
+BEGIN { plan tests => 4}
 
 my $module_name = 'Asterisk::Config';
 
@@ -19,4 +19,6 @@ my @methods = qw( configfile readconfig writeconfig setvariable variablecheck
 cgiform  htmlheader htmlfooter deletecontext helptext);
 
 can_ok( $module_name, @methods);
+
+ok($object->configfile('/tmp/dummy') eq '/tmp/dummy' , 'Able to set configfile');
 
