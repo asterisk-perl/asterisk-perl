@@ -21,7 +21,6 @@ lib/Asterisk/Conf/Zapata.pm
 lib/Asterisk/Extension.pm
 lib/Asterisk/Manager.pm
 lib/Asterisk/Outgoing.pm
-lib/Asterisk/Perl.pm
 lib/Asterisk/QCall.pm
 lib/Asterisk/Voicemail.pm
 lib/Asterisk/Zapata.pm
