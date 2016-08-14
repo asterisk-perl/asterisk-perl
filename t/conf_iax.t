@@ -7,7 +7,7 @@ use lib 'lib';
 
 BEGIN { plan tests => 3}
 
-my $module_name = 'Asterisk::Config::IAX';
+my $module_name = 'Asterisk::Conf::IAX';
 
 use_ok($module_name) or exit;
 

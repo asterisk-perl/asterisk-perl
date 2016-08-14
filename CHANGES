@@ -1,3 +1,5 @@
+1.07   Replace Config with Conf namespace to resolve conflict with Asterisk::config distro
+
 1.06    New upload with original asterisk-perl distro name
     More test script updates to increase code coverage.
 	

@@ -2,11 +2,11 @@
 
 use lib './lib', '../lib';
 
-use Asterisk::Config::Zapata;
+use Asterisk::Conf::Zapata;
 
 use Data::Dumper;
 
-my $zt = new Asterisk::Config::Zapata;
+my $zt = new Asterisk::Conf::Zapata;
 $zt->configfile('/etc/asterisk/zapata.conf');
 $zt->readconfig();
 
