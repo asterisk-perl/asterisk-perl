@@ -7,7 +7,7 @@ require 5.004;
 
 use vars qw($VERSION);
 
-$VERSION = '1.07';
+$VERSION = '1.08';
 
 sub version { $VERSION; }
 
@@ -21,5 +21,16 @@ sub new {
 }
 
 sub DESTROY { }
+
+package asterisk::perl;
+
+=head1 NAME
+
+asterisk::perl
+
+This module exists solely to satisfy packaging requirements.
+
+=cut
+
 
 1;
