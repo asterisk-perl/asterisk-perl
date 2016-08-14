@@ -1,4 +1,4 @@
-package Asterisk::Config;
+package Asterisk::Conf;
 
 require 5.004;
 

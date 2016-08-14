@@ -1,4 +1,4 @@
-package Asterisk::Config::MeetMe;
+package Asterisk::Conf::MeetMe;
 
 require 5.004;
 
@@ -19,8 +19,8 @@ description
 =cut
 
 use Asterisk;
-use Asterisk::Config;
-@ISA = ('Asterisk::Config');
+use Asterisk::Conf;
+@ISA = ('Asterisk::Conf');
 
 $VERSION = '0.01';
 

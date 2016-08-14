@@ -7,7 +7,7 @@ use lib 'lib';
 
 BEGIN { plan tests => 4}
 
-my $module_name = 'Asterisk::Config';
+my $module_name = 'Asterisk::Conf';
 
 use_ok($module_name) or exit;
 

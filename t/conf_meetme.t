@@ -7,7 +7,7 @@ use lib 'lib';
 
 BEGIN { plan tests => 3}
 
-my $module_name = 'Asterisk::Config::MeetMe';
+my $module_name = 'Asterisk::Conf::MeetMe';
 
 use_ok($module_name) or exit;
 
