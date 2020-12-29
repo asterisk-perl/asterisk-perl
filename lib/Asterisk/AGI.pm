@@ -17,17 +17,14 @@ Asterisk::AGI - Simple Asterisk Gateway Interface Class
 
 =head1 SYNOPSIS
 
-use Asterisk::AGI;
+  use Asterisk::AGI;
+  my $AGI = new Asterisk::AGI;
 
-$AGI = new Asterisk::AGI;
-
-# pull AGI variables into %input
-
+  # pull AGI variables into %input
 	%input = $AGI->ReadParse();   
 
-# say the number 1984
-
-	$AGI->say_number(1984);
+  # say the number 1984
+  $AGI->say_number(1984);
 
 =head1 DESCRIPTION
 

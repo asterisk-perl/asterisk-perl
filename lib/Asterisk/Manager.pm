@@ -15,19 +15,14 @@ Asterisk::Manager - Asterisk Manager Interface
 
 =head1 SYNOPSIS
 
-use Asterisk::Manager;
+  use Asterisk::Manager;
+  my $astman = new Asterisk::Manager;
+  $astman->user('username');
+  $astman->secret('test');
+  $astman->host('localhost');
 
-my $astman = new Asterisk::Manager;
-
-$astman->user('username');
-
-$astman->secret('test');
-
-$astman->host('localhost');
-
-$astman->connect || die "Could not connect to " . $astman->host . "!\n";
-
-$astman->disconnect;
+  $astman->connect || die "Could not connect to " . $astman->host . "!\n";
+  $astman->disconnect;
 
 =head1 DESCRIPTION
 
